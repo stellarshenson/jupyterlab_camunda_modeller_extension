@@ -25,15 +25,18 @@ The following workspace rules are STRICTLY ENFORCED for this project:
 JupyterLab extension for modelling BPMN diagrams and opening Camunda BPMN diagrams directly in JupyterLab.
 
 **Technology Stack**:
+
 - JupyterLab 4.x frontend extension (TypeScript)
 - Jupyter Server extension (Python)
 - BPMN/Camunda diagram support
 
 **Package Names**:
+
 - npm: `jupyterlab_camunda_modeller_extension`
 - PyPI: `jupyterlab-camunda-modeller-extension` (hyphenated)
 
 **Build System**:
+
 - Makefile orchestrates all build operations
 - Use `make install` for development installation
 - Use `make build` for production builds

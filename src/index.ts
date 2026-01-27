@@ -92,7 +92,12 @@ const plugin: JupyterFrontEndPlugin<void> = {
 
     // Debug: Check if file type was registered correctly
     const registeredType = docRegistry.getFileType(FILE_TYPE_NAME);
-    console.log('Registered file type:', registeredType?.name, 'icon:', registeredType?.icon?.name);
+    console.log(
+      'Registered file type:',
+      registeredType?.name,
+      'icon:',
+      registeredType?.icon?.name
+    );
 
     // Create and register widget factory
     const factory = new BpmnFactory({

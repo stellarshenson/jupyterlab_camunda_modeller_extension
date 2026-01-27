@@ -9,7 +9,7 @@
   flex-direction: column;
   overflow: hidden;
   height: 100%;
-  background: #ffffff;
+  background: #fff;
 }
 
 /* Diagram container - full modeler area */
@@ -18,19 +18,19 @@
   overflow: hidden;
   position: relative;
   min-height: 400px;
-  background: #ffffff;
+  background: #fff;
 }
 
 /* Force white background for bpmn-js canvas */
 .jp-BpmnWidget .djs-container {
-  background: #ffffff !important;
+  background: #fff !important;
 }
 
 /* Error display */
 .jp-BpmnWidget-error {
   padding: 20px;
   color: #d32f2f;
-  background: #ffffff;
+  background: #fff;
   overflow: auto;
 }
 
@@ -52,7 +52,7 @@
 }
 
 .jp-BpmnWidget-troubleshooting ul {
-  margin: 8px 0 0 0;
+  margin: 8px 0 0;
   padding-left: 20px;
 }
 
@@ -62,40 +62,40 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: #666666;
+  color: #666;
   font-size: 14px;
-  background: #ffffff;
+  background: #fff;
 }
 
 /* Ensure bpmn-js palette is visible with proper styling */
 .jp-BpmnWidget .djs-palette {
   background: #fafafa !important;
-  border: 1px solid #cccccc !important;
+  border: 1px solid #ccc !important;
+}
+
+/* Context pad styling */
+.jp-BpmnWidget .djs-context-pad {
+  background: #fff !important;
+  border: 1px solid #ccc !important;
+  border-radius: 4px;
+}
+
+/* Popup menu styling */
+.jp-BpmnWidget .djs-popup {
+  background: #fff !important;
+  border: 1px solid #ccc !important;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 15%);
+}
+
+/* Ensure all text and icons are dark on white background */
+.jp-BpmnWidget .djs-palette .entry {
+  color: #333 !important;
 }
 
 .jp-BpmnWidget .djs-palette .entry:hover {
   background: #e0e0e0 !important;
 }
 
-/* Context pad styling */
-.jp-BpmnWidget .djs-context-pad {
-  background: #ffffff !important;
-  border: 1px solid #cccccc !important;
-  border-radius: 4px;
-}
-
-/* Popup menu styling */
-.jp-BpmnWidget .djs-popup {
-  background: #ffffff !important;
-  border: 1px solid #cccccc !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-/* Ensure all text and icons are dark on white background */
-.jp-BpmnWidget .djs-palette .entry {
-  color: #333333 !important;
-}
-
 .jp-BpmnWidget .djs-palette .entry svg {
-  fill: #333333 !important;
+  fill: #333 !important;
 }
