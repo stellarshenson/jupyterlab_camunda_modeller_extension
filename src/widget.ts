@@ -99,6 +99,8 @@ export class BpmnWidget extends Widget {
    */
   private async _initialize(): Promise<void> {
     try {
+      console.log('[BpmnWidget] Starting initialization...');
+
       // Show loading state
       this._container.innerHTML = `
         <div class="jp-BpmnWidget-loading">
@@ -107,29 +109,42 @@ export class BpmnWidget extends Widget {
       `;
 
       // Wait for context to be ready
+      console.log('[BpmnWidget] Waiting for context...');
       await this._context.ready;
+      console.log('[BpmnWidget] Context ready');
+
+      // Clear loading state before creating modeler
+      this._container.innerHTML = '';
 
       // Create modeler
+      console.log('[BpmnWidget] Creating BpmnModeler...');
       this._modeler = new BpmnModeler({
         container: this._container,
         moddleExtensions: {
           camunda: camundaModdleDescriptor
         }
       });
+      console.log('[BpmnWidget] BpmnModeler created');
 
-      // Listen for changes to mark dirty
+      // Listen for changes to mark dirty and sync to model
       const eventBus = this._modeler.get('eventBus');
       eventBus.on('commandStack.changed', () => {
         if (!this._loading) {
           this._setDirty(true);
+          // Sync to model on every change so Ctrl+S works
+          void this._syncToModel();
         }
       });
 
       // Load the diagram
+      console.log('[BpmnWidget] Loading diagram...');
       await this._loadDiagram();
+      console.log('[BpmnWidget] Diagram loaded');
 
       this._ready.resolve();
+      console.log('[BpmnWidget] Initialization complete');
     } catch (error) {
+      console.error('[BpmnWidget] Initialization error:', error);
       this._showError(error);
       this._ready.reject(error);
     }
@@ -172,9 +187,9 @@ export class BpmnWidget extends Widget {
   }
 
   /**
-   * Save the diagram back to the document model
+   * Sync diagram content to the document model
    */
-  async save(): Promise<void> {
+  private async _syncToModel(): Promise<void> {
     if (!this._modeler) {
       return;
     }
@@ -182,13 +197,23 @@ export class BpmnWidget extends Widget {
     try {
       const { xml } = await this._modeler.saveXML({ format: true });
       if (xml) {
+        // Update model without triggering our contentChanged handler
+        this._loading = true;
         this._context.model.fromString(xml);
-        this._setDirty(false);
+        this._loading = false;
+        console.log('[BpmnWidget] Synced to model');
       }
     } catch (error) {
-      console.error('Failed to save BPMN diagram:', error);
-      throw error;
+      console.error('[BpmnWidget] Failed to sync to model:', error);
     }
+  }
+
+  /**
+   * Save the diagram back to the document model
+   */
+  async save(): Promise<void> {
+    await this._syncToModel();
+    this._setDirty(false);
   }
 
   /**
@@ -199,8 +224,8 @@ export class BpmnWidget extends Widget {
     state: DocumentRegistry.SaveState
   ): void {
     if (state === 'started') {
-      // Save diagram content to model before JupyterLab writes to file
-      void this.save();
+      // Model should already be synced, but ensure it's up to date
+      console.log('[BpmnWidget] Save started, syncing model...');
     }
   }
 

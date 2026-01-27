@@ -1,0 +1,9 @@
+{
+  "jupyter.lab.setting-icon": "bpmn:icon",
+  "jupyter.lab.setting-icon-label": "BPMN Modeler",
+  "title": "BPMN Modeler",
+  "description": "Settings for the BPMN diagram modeler",
+  "type": "object",
+  "properties": {},
+  "additionalProperties": false
+}

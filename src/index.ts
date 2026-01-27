@@ -3,8 +3,8 @@ import {
   JupyterFrontEndPlugin
 } from '@jupyterlab/application';
 import { DocumentWidget } from '@jupyterlab/docregistry';
+import { LabIcon } from '@jupyterlab/ui-components';
 
-import { bpmnIcon } from './icon';
 import { BpmnFactory, BpmnWidget } from './widget';
 
 /**
@@ -16,6 +16,26 @@ const BPMN_EXTENSIONS = ['.bpmn'];
  * File type name
  */
 const FILE_TYPE_NAME = 'bpmn';
+
+/**
+ * BPMN icon SVG - Camunda orange with BPMN symbols
+ * Simplified SVG for LabIcon compatibility
+ */
+const BPMN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <path fill="#fc5d0d" d="M80.472 0c10.785 0 19.528 8.743 19.528 19.528v60.944c0 10.785-8.743 19.528-19.528 19.528H19.528C8.743 100 0 91.257 0 80.472V19.528C0 8.743 8.743 0 19.528 0h60.944z"/>
+  <circle cx="20.86" cy="50" r="8.5" fill="#fff"/>
+  <circle cx="79.08" cy="50" r="8.5" fill="#fff"/>
+  <rect x="32.46" y="43.45" width="13.18" height="13.14" fill="#fff"/>
+  <path fill="#fff" d="M58.95 40.7l-9.3 9.29 9.3 9.3 9.3-9.3z"/>
+</svg>`;
+
+/**
+ * Create BPMN icon
+ */
+const bpmnIcon = new LabIcon({
+  name: 'bpmn:icon',
+  svgstr: BPMN_SVG
+});
 
 /**
  * Plugin ID
@@ -68,6 +88,11 @@ const plugin: JupyterFrontEndPlugin<void> = {
       contentType: 'file',
       icon: bpmnIcon
     });
+    console.log('BPMN file type registered with icon');
+
+    // Debug: Check if file type was registered correctly
+    const registeredType = docRegistry.getFileType(FILE_TYPE_NAME);
+    console.log('Registered file type:', registeredType?.name, 'icon:', registeredType?.icon?.name);
 
     // Create and register widget factory
     const factory = new BpmnFactory({

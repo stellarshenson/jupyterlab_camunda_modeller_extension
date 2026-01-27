@@ -9,7 +9,7 @@
   flex-direction: column;
   overflow: hidden;
   height: 100%;
-  background: var(--jp-layout-color1);
+  background: #ffffff;
 }
 
 /* Diagram container - full modeler area */
@@ -18,23 +18,19 @@
   overflow: hidden;
   position: relative;
   min-height: 400px;
+  background: #ffffff;
 }
 
-/* Override bpmn-js canvas background for light theme */
+/* Force white background for bpmn-js canvas */
 .jp-BpmnWidget .djs-container {
-  background: #fafafa !important;
-}
-
-/* Dark theme support */
-[data-jp-theme-light='false'] .jp-BpmnWidget .djs-container {
-  background: #2d2d2d !important;
+  background: #ffffff !important;
 }
 
 /* Error display */
 .jp-BpmnWidget-error {
   padding: 20px;
-  color: var(--jp-error-color1);
-  background: var(--jp-layout-color1);
+  color: #d32f2f;
+  background: #ffffff;
   overflow: auto;
 }
 
@@ -45,13 +41,13 @@
 
 .jp-BpmnWidget-errorContent h3 {
   margin-top: 0;
-  color: var(--jp-error-color1);
+  color: #d32f2f;
 }
 
 .jp-BpmnWidget-troubleshooting {
   margin-top: 16px;
   padding: 12px;
-  background: var(--jp-layout-color2);
+  background: #f5f5f5;
   border-radius: 4px;
 }
 
@@ -66,30 +62,40 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: var(--jp-ui-font-color2);
+  color: #666666;
   font-size: 14px;
+  background: #ffffff;
 }
 
-/* Ensure bpmn-js palette and toolbar are visible */
+/* Ensure bpmn-js palette is visible with proper styling */
 .jp-BpmnWidget .djs-palette {
-  background: var(--jp-layout-color1);
-  border: 1px solid var(--jp-border-color1);
+  background: #fafafa !important;
+  border: 1px solid #cccccc !important;
 }
 
 .jp-BpmnWidget .djs-palette .entry:hover {
-  background: var(--jp-layout-color2);
+  background: #e0e0e0 !important;
 }
 
 /* Context pad styling */
 .jp-BpmnWidget .djs-context-pad {
-  background: var(--jp-layout-color1);
-  border: 1px solid var(--jp-border-color1);
+  background: #ffffff !important;
+  border: 1px solid #cccccc !important;
   border-radius: 4px;
 }
 
 /* Popup menu styling */
 .jp-BpmnWidget .djs-popup {
-  background: var(--jp-layout-color1);
-  border: 1px solid var(--jp-border-color1);
-  box-shadow: var(--jp-elevation-z4);
+  background: #ffffff !important;
+  border: 1px solid #cccccc !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Ensure all text and icons are dark on white background */
+.jp-BpmnWidget .djs-palette .entry {
+  color: #333333 !important;
+}
+
+.jp-BpmnWidget .djs-palette .entry svg {
+  fill: #333333 !important;
 }

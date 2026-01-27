@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_1" isExecutable="true">
+    <bpmn:startEvent id="StartEvent_1">
+      <bpmn:outgoing>Flow_0rqxr5g</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:task id="Activity_1bniq2o" name="test">
+      <bpmn:incoming>Flow_0rqxr5g</bpmn:incoming>
+      <bpmn:outgoing>Flow_1ybp80i</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="Flow_0rqxr5g" sourceRef="StartEvent_1" targetRef="Activity_1bniq2o" />
+    <bpmn:endEvent id="Event_1h59c43">
+      <bpmn:incoming>Flow_1ybp80i</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1ybp80i" sourceRef="Activity_1bniq2o" targetRef="Event_1h59c43" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1">
+      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_1" bpmnElement="StartEvent_1">
+        <dc:Bounds x="180" y="160" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1bniq2o_di" bpmnElement="Activity_1bniq2o">
+        <dc:Bounds x="270" y="138" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1h59c43_di" bpmnElement="Event_1h59c43">
+        <dc:Bounds x="432" y="160" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_0rqxr5g_di" bpmnElement="Flow_0rqxr5g">
+        <di:waypoint x="216" y="178" />
+        <di:waypoint x="270" y="178" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1ybp80i_di" bpmnElement="Flow_1ybp80i">
+        <di:waypoint x="370" y="178" />
+        <di:waypoint x="432" y="178" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
