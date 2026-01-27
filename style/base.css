@@ -1,5 +1,95 @@
 /*
     See the JupyterLab Developer Guide for useful CSS Patterns:
-
     https://jupyterlab.readthedocs.io/en/stable/developer/css.html
 */
+
+/* Main widget container */
+.jp-BpmnWidget {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100%;
+  background: var(--jp-layout-color1);
+}
+
+/* Diagram container - full modeler area */
+.jp-BpmnWidget-container {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  min-height: 400px;
+}
+
+/* Override bpmn-js canvas background for light theme */
+.jp-BpmnWidget .djs-container {
+  background: #fafafa !important;
+}
+
+/* Dark theme support */
+[data-jp-theme-light='false'] .jp-BpmnWidget .djs-container {
+  background: #2d2d2d !important;
+}
+
+/* Error display */
+.jp-BpmnWidget-error {
+  padding: 20px;
+  color: var(--jp-error-color1);
+  background: var(--jp-layout-color1);
+  overflow: auto;
+}
+
+.jp-BpmnWidget-errorContent {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.jp-BpmnWidget-errorContent h3 {
+  margin-top: 0;
+  color: var(--jp-error-color1);
+}
+
+.jp-BpmnWidget-troubleshooting {
+  margin-top: 16px;
+  padding: 12px;
+  background: var(--jp-layout-color2);
+  border-radius: 4px;
+}
+
+.jp-BpmnWidget-troubleshooting ul {
+  margin: 8px 0 0 0;
+  padding-left: 20px;
+}
+
+/* Loading state */
+.jp-BpmnWidget-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--jp-ui-font-color2);
+  font-size: 14px;
+}
+
+/* Ensure bpmn-js palette and toolbar are visible */
+.jp-BpmnWidget .djs-palette {
+  background: var(--jp-layout-color1);
+  border: 1px solid var(--jp-border-color1);
+}
+
+.jp-BpmnWidget .djs-palette .entry:hover {
+  background: var(--jp-layout-color2);
+}
+
+/* Context pad styling */
+.jp-BpmnWidget .djs-context-pad {
+  background: var(--jp-layout-color1);
+  border: 1px solid var(--jp-border-color1);
+  border-radius: 4px;
+}
+
+/* Popup menu styling */
+.jp-BpmnWidget .djs-popup {
+  background: var(--jp-layout-color1);
+  border: 1px solid var(--jp-border-color1);
+  box-shadow: var(--jp-elevation-z4);
+}
