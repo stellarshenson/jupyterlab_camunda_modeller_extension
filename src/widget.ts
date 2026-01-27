@@ -46,6 +46,7 @@ export class BpmnWidget extends Widget {
   private _modeler: BpmnModeler | null = null;
   private _dirty = false;
   private _loading = false;
+  private _popupObserver: MutationObserver | null = null;
 
   constructor(context: DocumentRegistry.Context) {
     super();
@@ -127,6 +128,10 @@ export class BpmnWidget extends Widget {
         additionalModules: [BpmnColorPickerModule]
       });
       console.log('[BpmnWidget] BpmnModeler created');
+
+      // Set up observer to move popup-parent to body for correct positioning
+      // This fixes popup positioning when JupyterLab has CSS transforms
+      this._setupPopupObserver();
 
       // Listen for changes to mark dirty and sync to model
       const eventBus = this._modeler.get('eventBus');
@@ -285,6 +290,33 @@ export class BpmnWidget extends Widget {
   }
 
   /**
+   * Set up MutationObserver to move popup-parent to document.body
+   * This fixes popup positioning when JupyterLab has CSS transforms
+   */
+  private _setupPopupObserver(): void {
+    this._popupObserver = new MutationObserver(mutations => {
+      mutations.forEach(mutation => {
+        mutation.addedNodes.forEach(node => {
+          if (
+            node instanceof HTMLElement &&
+            node.classList.contains('djs-popup-parent')
+          ) {
+            // Move popup-parent to body for correct fixed positioning
+            document.body.appendChild(node);
+            console.log('[BpmnWidget] Moved popup-parent to body');
+          }
+        });
+      });
+    });
+
+    // Observe the container for added popup elements
+    this._popupObserver.observe(this._container, {
+      childList: true,
+      subtree: true
+    });
+  }
+
+  /**
    * Get the document path
    */
   getDocumentPath(): string {
@@ -330,6 +362,17 @@ export class BpmnWidget extends Widget {
     // Disconnect signals
     this._context.model.contentChanged.disconnect(this._onContentChanged, this);
     this._context.saveState.disconnect(this._onSaveState, this);
+
+    // Stop observing popup changes
+    if (this._popupObserver) {
+      this._popupObserver.disconnect();
+      this._popupObserver = null;
+    }
+
+    // Clean up any popup-parent elements we moved to body
+    document.querySelectorAll('body > .djs-popup-parent').forEach(el => {
+      el.remove();
+    });
 
     // Destroy modeler
     if (this._modeler) {

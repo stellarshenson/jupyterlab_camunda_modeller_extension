@@ -174,3 +174,47 @@
   opacity: 1 !important;
   color: #333 !important;
 }
+
+/* ==========================================================================
+   Popup styles for body-level popups (moved for correct positioning)
+   These selectors target a different DOM context than .jp-BpmnWidget selectors
+   ========================================================================== */
+
+/* stylelint-disable no-descending-specificity */
+
+/* Popup menu when moved to body */
+body > .djs-popup-parent .djs-popup {
+  background: #fff !important;
+  border: 1px solid #ccc !important;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 15%);
+}
+
+/* Color picker popup when moved to body */
+body > .djs-popup-parent .djs-popup.color-picker {
+  background: #fff !important;
+  border: 1px solid #ccc !important;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 15%);
+  opacity: 1 !important;
+}
+
+/* Popup entries when moved to body */
+body > .djs-popup-parent .djs-popup .entry {
+  color: #333 !important;
+  opacity: 1 !important;
+}
+
+body > .djs-popup-parent .djs-popup .entry svg {
+  fill: #333 !important;
+  opacity: 1 !important;
+}
+
+/* Color picker entries when moved to body */
+body > .djs-popup-parent .djs-popup.color-picker .entry {
+  opacity: 1 !important;
+}
+
+body > .djs-popup-parent .djs-popup.color-picker .entry:hover {
+  opacity: 0.8 !important;
+}
+
+/* stylelint-enable no-descending-specificity */
