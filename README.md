@@ -32,22 +32,6 @@ Model BPMN diagrams and open Camunda BPMN files directly in JupyterLab. This ext
 pip install jupyterlab-camunda-modeller-extension
 ```
 
-## Development
-
-> [!IMPORTANT]
-> Always use `make install` for development installation. Do not run raw `pip install` or `npm install` commands.
-
-```bash
-# Install for development
-make install
-
-# Run tests
-make test
-
-# Build production package
-make build
-```
-
 ## Uninstall
 
 ```bash
