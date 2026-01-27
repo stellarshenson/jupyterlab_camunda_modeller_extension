@@ -10,6 +10,8 @@
 
 Model BPMN diagrams and open Camunda BPMN files directly in JupyterLab. This extension provides a visual editor for business process modelling within the JupyterLab environment.
 
+![Screenshot](.resources/screenshot.png)
+
 ## Features
 
 - **BPMN diagram modelling** - Create and edit BPMN 2.0 diagrams visually
