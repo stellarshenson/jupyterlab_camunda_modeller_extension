@@ -67,35 +67,110 @@
   background: #fff;
 }
 
-/* Ensure bpmn-js palette is visible with proper styling */
+/* ==========================================================================
+   bpmn-js UI Components
+   Base selectors first, then :hover/:before variants
+   ========================================================================== */
+
+/* Palette container */
 .jp-BpmnWidget .djs-palette {
   background: #fafafa !important;
   border: 1px solid #ccc !important;
 }
 
-/* Context pad styling */
+/* Context pad container */
 .jp-BpmnWidget .djs-context-pad {
   background: #fff !important;
   border: 1px solid #ccc !important;
   border-radius: 4px;
+  opacity: 1 !important;
 }
 
-/* Popup menu styling */
+/* Popup menu container */
 .jp-BpmnWidget .djs-popup {
   background: #fff !important;
   border: 1px solid #ccc !important;
   box-shadow: 0 2px 8px rgb(0 0 0 / 15%);
 }
 
-/* Ensure all text and icons are dark on white background */
+/* Color picker popup container */
+.jp-BpmnWidget .djs-popup.color-picker {
+  background: #fff !important;
+  border: 1px solid #ccc !important;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 15%);
+  opacity: 1 !important;
+}
+
+/* --------------------------------------------------------------------------
+   Entry elements - base styles (alphabetical by parent)
+   -------------------------------------------------------------------------- */
+
+/* Context pad entries */
+.jp-BpmnWidget .djs-context-pad .entry {
+  opacity: 1 !important;
+  color: #333 !important;
+}
+
+.jp-BpmnWidget .djs-context-pad .entry svg {
+  fill: #333 !important;
+  opacity: 1 !important;
+}
+
+/* Palette entries */
 .jp-BpmnWidget .djs-palette .entry {
   color: #333 !important;
 }
 
+.jp-BpmnWidget .djs-palette .entry svg {
+  fill: #333 !important;
+}
+
+/* Popup entries */
+.jp-BpmnWidget .djs-popup .entry {
+  color: #333 !important;
+  opacity: 1 !important;
+}
+
+.jp-BpmnWidget .djs-popup .entry svg {
+  fill: #333 !important;
+  opacity: 1 !important;
+}
+
+/* Color picker entries */
+.jp-BpmnWidget .djs-popup.color-picker .entry {
+  opacity: 1 !important;
+}
+
+/* --------------------------------------------------------------------------
+   Entry elements - :hover and ::before pseudo variants
+   -------------------------------------------------------------------------- */
+
+/* Context pad entry pseudo-elements */
+.jp-BpmnWidget .djs-context-pad .entry::before {
+  opacity: 1 !important;
+  color: #333 !important;
+}
+
+/* Palette entry hover */
 .jp-BpmnWidget .djs-palette .entry:hover {
   background: #e0e0e0 !important;
 }
 
-.jp-BpmnWidget .djs-palette .entry svg {
-  fill: #333 !important;
+/* Color picker entry hover */
+.jp-BpmnWidget .djs-popup.color-picker .entry:hover {
+  opacity: 0.8 !important;
+}
+
+/* --------------------------------------------------------------------------
+   BPMN icon elements in context pad
+   -------------------------------------------------------------------------- */
+
+.jp-BpmnWidget .djs-context-pad [class*='bpmn-icon-'] {
+  opacity: 1 !important;
+  color: #333 !important;
+}
+
+.jp-BpmnWidget .djs-context-pad [class*='bpmn-icon-']::before {
+  opacity: 1 !important;
+  color: #333 !important;
 }

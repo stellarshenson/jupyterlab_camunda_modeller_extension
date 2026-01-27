@@ -6,6 +6,7 @@ import { Widget } from '@lumino/widgets';
 // Import bpmn-js modeler
 import BpmnModeler from 'bpmn-js/lib/Modeler';
 import camundaModdleDescriptor from 'camunda-bpmn-moddle/resources/camunda';
+import BpmnColorPickerModule from 'bpmn-js-color-picker';
 
 /**
  * Empty BPMN diagram template for new files
@@ -116,13 +117,14 @@ export class BpmnWidget extends Widget {
       // Clear loading state before creating modeler
       this._container.innerHTML = '';
 
-      // Create modeler
+      // Create modeler with color picker
       console.log('[BpmnWidget] Creating BpmnModeler...');
       this._modeler = new BpmnModeler({
         container: this._container,
         moddleExtensions: {
           camunda: camundaModdleDescriptor
-        }
+        },
+        additionalModules: [BpmnColorPickerModule]
       });
       console.log('[BpmnWidget] BpmnModeler created');
 

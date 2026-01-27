@@ -44,3 +44,9 @@ declare module 'camunda-bpmn-moddle/resources/camunda' {
   const camundaModdleDescriptor: Record<string, any>;
   export default camundaModdleDescriptor;
 }
+
+// bpmn-js color picker module
+declare module 'bpmn-js-color-picker' {
+  const BpmnColorPickerModule: any;
+  export default BpmnColorPickerModule;
+}

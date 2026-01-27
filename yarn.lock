@@ -4531,6 +4531,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"bpmn-js-color-picker@npm:^0.7.2":
+  version: 0.7.2
+  resolution: "bpmn-js-color-picker@npm:0.7.2"
+  peerDependencies:
+    bpmn-js: ">= 14"
+  checksum: ff8a6c2e64aeca22dcaa8571e573af1e52722fa58acc4cc9cb8ecc6caedcda5f2782b1d2ce418baf9c1b7460f6450373966061fc2e9c536d335f89a042014321
+  languageName: node
+  linkType: hard
+
 "bpmn-js@npm:^18.10.1":
   version: 18.10.1
   resolution: "bpmn-js@npm:18.10.1"
@@ -7881,6 +7890,7 @@ __metadata:
     "@typescript-eslint/eslint-plugin": ^6.1.0
     "@typescript-eslint/parser": ^6.1.0
     bpmn-js: ^18.10.1
+    bpmn-js-color-picker: ^0.7.2
     camunda-bpmn-moddle: ^7.0.1
     css-loader: ^6.7.1
     eslint: ^8.36.0
