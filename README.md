@@ -53,3 +53,7 @@ make build
 ```bash
 pip uninstall jupyterlab_camunda_modeller_extension
 ```
+
+---
+
+*Built with the mass irony of using a visual BPMN editor to model workflows that will inevitably be replaced by an AI agent that doesn't need diagrams to understand what you meant. Until then, we'll keep drawing boxes and arrows, pretending that documenting our processes makes them more efficient - when in reality, the diagram will be outdated before the meeting to review it even starts. But hey, at least the boxes are nicely rounded and the gateway diamonds are perfectly centered.*
