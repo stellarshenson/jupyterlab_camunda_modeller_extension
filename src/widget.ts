@@ -349,6 +349,181 @@ export class BpmnWidget extends Widget {
   }
 
   /**
+   * Realign connectors by widening text annotations and re-routing associations
+   */
+  realignConnectors(): void {
+    if (!this._modeler) {
+      console.warn('[BpmnWidget] No modeler available for realign');
+      return;
+    }
+
+    try {
+      const modeling = this._modeler.get('modeling');
+      const elementRegistry = this._modeler.get('elementRegistry');
+
+      // Find all text annotations
+      const textAnnotations = elementRegistry.filter(
+        (el: any) => el.type === 'bpmn:TextAnnotation'
+      );
+
+      console.log(
+        `[BpmnWidget] Found ${textAnnotations.length} text annotations`
+      );
+
+      // Resize each text annotation based on text content
+      textAnnotations.forEach((annotation: any) => {
+        const text = annotation.businessObject?.text || '';
+        // Estimate required width: ~7px per character, min 100px, max 400px
+        const estimatedWidth = Math.max(100, Math.min(400, text.length * 7));
+
+        // Only resize if width needs to increase
+        if (estimatedWidth > annotation.width) {
+          console.log(
+            `[BpmnWidget] Resizing annotation ${annotation.id}: ${annotation.width} -> ${estimatedWidth}`
+          );
+          modeling.resizeShape(annotation, {
+            x: annotation.x,
+            y: annotation.y,
+            width: estimatedWidth,
+            height: annotation.height
+          });
+        }
+      });
+
+      // Find all associations
+      const associations = elementRegistry.filter(
+        (el: any) => el.type === 'bpmn:Association'
+      );
+
+      console.log(`[BpmnWidget] Found ${associations.length} associations`);
+
+      // Re-route each association with proper waypoints
+      associations.forEach((assoc: any) => {
+        const source = assoc.source;
+        const target = assoc.target;
+
+        if (!source || !target) {
+          console.warn(
+            `[BpmnWidget] Association ${assoc.id} missing source or target`
+          );
+          return;
+        }
+
+        // Calculate centers
+        const sourceCenter = this._getShapeCenter(source);
+        const targetCenter = this._getShapeCenter(target);
+
+        // Calculate border intersection points
+        const sourcePoint = this._getBorderIntersection(
+          source,
+          sourceCenter,
+          targetCenter
+        );
+        const targetPoint = this._getBorderIntersection(
+          target,
+          targetCenter,
+          sourceCenter
+        );
+
+        console.log(
+          `[BpmnWidget] Updating waypoints for ${assoc.id}: ` +
+            `(${sourcePoint.x}, ${sourcePoint.y}) -> (${targetPoint.x}, ${targetPoint.y})`
+        );
+
+        modeling.updateWaypoints(assoc, [sourcePoint, targetPoint]);
+      });
+
+      console.log('[BpmnWidget] Realign connectors complete');
+    } catch (error) {
+      console.error('[BpmnWidget] Failed to realign connectors:', error);
+    }
+  }
+
+  /**
+   * Get the center point of a shape
+   */
+  private _getShapeCenter(shape: any): { x: number; y: number } {
+    return {
+      x: shape.x + shape.width / 2,
+      y: shape.y + shape.height / 2
+    };
+  }
+
+  /**
+   * Calculate intersection point on shape border along line from inside to outside
+   */
+  private _getBorderIntersection(
+    shape: any,
+    inside: { x: number; y: number },
+    outside: { x: number; y: number }
+  ): { x: number; y: number } {
+    const { x, y, width, height } = shape;
+
+    // Shape bounds
+    const left = x;
+    const right = x + width;
+    const top = y;
+    const bottom = y + height;
+
+    // Direction vector from inside to outside
+    const dx = outside.x - inside.x;
+    const dy = outside.y - inside.y;
+
+    // Handle zero-length direction
+    if (dx === 0 && dy === 0) {
+      return { x: inside.x, y: top }; // Default to top center
+    }
+
+    // Calculate intersection with each edge
+    const intersections: Array<{ x: number; y: number; t: number }> = [];
+
+    // Left edge (x = left)
+    if (dx !== 0) {
+      const t = (left - inside.x) / dx;
+      const iy = inside.y + t * dy;
+      if (t > 0 && iy >= top && iy <= bottom) {
+        intersections.push({ x: left, y: iy, t });
+      }
+    }
+
+    // Right edge (x = right)
+    if (dx !== 0) {
+      const t = (right - inside.x) / dx;
+      const iy = inside.y + t * dy;
+      if (t > 0 && iy >= top && iy <= bottom) {
+        intersections.push({ x: right, y: iy, t });
+      }
+    }
+
+    // Top edge (y = top)
+    if (dy !== 0) {
+      const t = (top - inside.y) / dy;
+      const ix = inside.x + t * dx;
+      if (t > 0 && ix >= left && ix <= right) {
+        intersections.push({ x: ix, y: top, t });
+      }
+    }
+
+    // Bottom edge (y = bottom)
+    if (dy !== 0) {
+      const t = (bottom - inside.y) / dy;
+      const ix = inside.x + t * dx;
+      if (t > 0 && ix >= left && ix <= right) {
+        intersections.push({ x: ix, y: bottom, t });
+      }
+    }
+
+    // Return intersection with smallest positive t (closest to inside point)
+    if (intersections.length > 0) {
+      intersections.sort((a, b) => a.t - b.t);
+      return { x: intersections[0].x, y: intersections[0].y };
+    }
+
+    // Fallback: return center of closest edge
+    return { x: inside.x, y: top };
+  }
+
+  /**
    * Dispose of resources
    */
   dispose(): void {

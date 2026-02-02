@@ -46,7 +46,8 @@ const PLUGIN_ID = 'jupyterlab_camunda_modeller_extension:plugin';
  * Command IDs
  */
 const CommandIds = {
-  exportSvg: 'bpmn:export-svg'
+  exportSvg: 'bpmn:export-svg',
+  realignConnectors: 'bpmn:realign-connectors'
 };
 
 /**
@@ -145,11 +146,31 @@ const plugin: JupyterFrontEndPlugin<void> = {
       }
     });
 
-    // Add context menu item for BPMN widgets
+    // Register Realign Connectors command
+    commands.addCommand(CommandIds.realignConnectors, {
+      label: 'Realign Connectors',
+      caption:
+        'Widen text annotations and re-route association connectors for proper alignment',
+      isEnabled: () => getBpmnWidget(app) !== null,
+      execute: () => {
+        const widget = getBpmnWidget(app);
+        if (widget) {
+          widget.realignConnectors();
+        }
+      }
+    });
+
+    // Add context menu items for BPMN widgets
     app.contextMenu.addItem({
       command: CommandIds.exportSvg,
       selector: '.jp-BpmnWidget',
       rank: 1
+    });
+
+    app.contextMenu.addItem({
+      command: CommandIds.realignConnectors,
+      selector: '.jp-BpmnWidget',
+      rank: 2
     });
   }
 };
