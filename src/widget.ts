@@ -22,10 +22,7 @@ function GroupColorHandler(eventBus: any, elementRegistry: any) {
     }
     // Try different color properties used by bpmn-js-color-picker
     return (
-      di.get('bioc:fill') ||
-      di.get('color:background-color') ||
-      di.fill ||
-      null
+      di.get('bioc:fill') || di.get('color:background-color') || di.fill || null
     );
   }
 
