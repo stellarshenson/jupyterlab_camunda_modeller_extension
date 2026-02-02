@@ -10,6 +10,68 @@ import camundaModdleDescriptor from 'camunda-bpmn-moddle/resources/camunda';
 import BpmnColorPickerModule from 'bpmn-js-color-picker';
 
 /**
+ * Custom module to apply fill color to Groups
+ * Groups don't get fill color by default in bpmn-js
+ */
+function GroupColorHandler(eventBus: any, elementRegistry: any) {
+  // Helper to get fill color from element's di
+  function getFillColor(element: any): string | null {
+    const di = element.di;
+    if (!di) {
+      return null;
+    }
+    // Try different color properties used by bpmn-js-color-picker
+    return (
+      di.get('bioc:fill') ||
+      di.get('color:background-color') ||
+      di.fill ||
+      null
+    );
+  }
+
+  // Helper to apply fill to group
+  function applyGroupFill(element: any) {
+    const fill = getFillColor(element);
+    if (fill) {
+      const gfx = elementRegistry.getGraphics(element);
+      if (gfx) {
+        const rect = gfx.querySelector('.djs-visual rect');
+        if (rect) {
+          rect.style.fill = fill;
+          rect.style.fillOpacity = '0.3'; // Semi-transparent like lanes
+        }
+      }
+    }
+  }
+
+  // Update group fill when element is changed (color applied)
+  eventBus.on('element.changed', (event: any) => {
+    const element = event.element;
+    if (element.type === 'bpmn:Group') {
+      applyGroupFill(element);
+    }
+  });
+
+  // Also handle initial render for groups with existing colors
+  eventBus.on('shape.added', (event: any) => {
+    const element = event.element;
+    if (element.type === 'bpmn:Group') {
+      // Delay to ensure graphics are ready
+      setTimeout(() => {
+        applyGroupFill(element);
+      }, 0);
+    }
+  });
+}
+
+(GroupColorHandler as any).$inject = ['eventBus', 'elementRegistry'];
+
+const GroupColorModule = {
+  __init__: ['groupColorHandler'],
+  groupColorHandler: ['type', GroupColorHandler]
+};
+
+/**
  * Empty BPMN diagram template for new files
  */
 const EMPTY_BPMN = `<?xml version="1.0" encoding="UTF-8"?>
@@ -126,7 +188,7 @@ export class BpmnWidget extends Widget {
         moddleExtensions: {
           camunda: camundaModdleDescriptor
         },
-        additionalModules: [BpmnColorPickerModule]
+        additionalModules: [BpmnColorPickerModule, GroupColorModule]
       });
       console.log('[BpmnWidget] BpmnModeler created');
 
