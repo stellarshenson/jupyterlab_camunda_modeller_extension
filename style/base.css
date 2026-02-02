@@ -218,3 +218,16 @@ body > .djs-popup-parent .djs-popup.color-picker .entry:hover {
 }
 
 /* stylelint-enable no-descending-specificity */
+
+/* ==========================================================================
+   Direct Editing Styles
+   ========================================================================== */
+
+/* Make editable label text black (not dim gray) */
+.jp-BpmnWidget .djs-direct-editing-content {
+  color: #000 !important;
+}
+
+.jp-BpmnWidget .djs-direct-editing-parent {
+  opacity: 1 !important;
+}

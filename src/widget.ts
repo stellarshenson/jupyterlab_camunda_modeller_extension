@@ -1,5 +1,6 @@
 import { DocumentWidget } from '@jupyterlab/docregistry';
 import { ABCWidgetFactory, DocumentRegistry } from '@jupyterlab/docregistry';
+import { showDialog, Dialog } from '@jupyterlab/apputils';
 import { PromiseDelegate } from '@lumino/coreutils';
 import { Widget } from '@lumino/widgets';
 
@@ -397,7 +398,7 @@ export class BpmnWidget extends Widget {
 
       console.log(`[BpmnWidget] Found ${associations.length} associations`);
 
-      // Re-route each association with proper waypoints
+      // Re-route associations where endpoint is not on target boundary
       associations.forEach((assoc: any) => {
         const source = assoc.source;
         const target = assoc.target;
@@ -407,6 +408,18 @@ export class BpmnWidget extends Widget {
             `[BpmnWidget] Association ${assoc.id} missing source or target`
           );
           return;
+        }
+
+        // Check if endpoint is already on target boundary
+        const waypoints = assoc.waypoints;
+        if (waypoints && waypoints.length >= 2) {
+          const endpoint = waypoints[waypoints.length - 1];
+          if (this._isPointOnBoundary(endpoint, target)) {
+            console.log(
+              `[BpmnWidget] Skipping ${assoc.id} - endpoint already on boundary`
+            );
+            return;
+          }
         }
 
         // Calculate centers
@@ -447,6 +460,37 @@ export class BpmnWidget extends Widget {
       x: shape.x + shape.width / 2,
       y: shape.y + shape.height / 2
     };
+  }
+
+  /**
+   * Check if a point is on the boundary of a shape (within tolerance)
+   */
+  private _isPointOnBoundary(
+    point: { x: number; y: number },
+    shape: any,
+    tolerance: number = 5
+  ): boolean {
+    const { x, y, width, height } = shape;
+    const left = x;
+    const right = x + width;
+    const top = y;
+    const bottom = y + height;
+
+    // Check if point is within shape bounds (with tolerance)
+    const withinX = point.x >= left - tolerance && point.x <= right + tolerance;
+    const withinY = point.y >= top - tolerance && point.y <= bottom + tolerance;
+
+    if (!withinX || !withinY) {
+      return false;
+    }
+
+    // Check if point is on one of the edges (within tolerance)
+    const onLeft = Math.abs(point.x - left) <= tolerance;
+    const onRight = Math.abs(point.x - right) <= tolerance;
+    const onTop = Math.abs(point.y - top) <= tolerance;
+    const onBottom = Math.abs(point.y - bottom) <= tolerance;
+
+    return onLeft || onRight || onTop || onBottom;
   }
 
   /**
@@ -560,6 +604,38 @@ export class BpmnWidget extends Widget {
 }
 
 /**
+ * Custom DocumentWidget that prompts before closing unsaved diagrams
+ */
+class BpmnDocumentWidget extends DocumentWidget<BpmnWidget> {
+  /**
+   * Handle close request - prompt if unsaved changes
+   */
+  protected onCloseRequest(msg: any): void {
+    const bpmnWidget = this.content;
+
+    if (bpmnWidget.dirty) {
+      void showDialog({
+        title: 'Unsaved Changes',
+        body: `"${this.context.localPath}" has unsaved changes. Are you sure you want to close?`,
+        buttons: [
+          Dialog.cancelButton({ label: 'Cancel' }),
+          Dialog.warnButton({ label: 'Close Without Saving' })
+        ]
+      }).then(result => {
+        if (result.button.accept) {
+          // User confirmed, close the widget
+          super.onCloseRequest(msg);
+        }
+        // Otherwise, do nothing (cancel close)
+      });
+    } else {
+      // No unsaved changes, close normally
+      super.onCloseRequest(msg);
+    }
+  }
+}
+
+/**
  * A widget factory for BPMN diagrams
  */
 export class BpmnFactory extends ABCWidgetFactory<
@@ -573,7 +649,7 @@ export class BpmnFactory extends ABCWidgetFactory<
     context: DocumentRegistry.Context
   ): DocumentWidget<BpmnWidget> {
     const content = new BpmnWidget(context);
-    const widget = new DocumentWidget({ content, context });
+    const widget = new BpmnDocumentWidget({ content, context });
 
     return widget;
   }

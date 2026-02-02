@@ -8522,17 +8522,17 @@ __metadata:
   linkType: hard
 
 "minipass-fetch@npm:^5.0.0":
-  version: 5.0.0
-  resolution: "minipass-fetch@npm:5.0.0"
+  version: 5.0.1
+  resolution: "minipass-fetch@npm:5.0.1"
   dependencies:
     encoding: "npm:^0.1.13"
     minipass: "npm:^7.0.3"
-    minipass-sized: "npm:^1.0.3"
+    minipass-sized: "npm:^2.0.0"
     minizlib: "npm:^3.0.1"
   dependenciesMeta:
     encoding:
       optional: true
-  checksum: 416645d1e54c09fdfe64ec1676541ac2f6f2af3abc7ad25f2f22c4518535997c1ecd2c0c586ea8a5c6499ad7d8f97671f50ff38488ada54bf61fde309f731379
+  checksum: afce548b0d2654b581b7a9eb6ae0dc70b556fa89aaa3e3cbc5c3df4cca837b041fd2393737b671148098dc7cb3a133b53aa826c2a00e631495d74987a3f03284
   languageName: node
   linkType: hard
 
@@ -8554,12 +8554,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"minipass-sized@npm:^1.0.3":
-  version: 1.0.3
-  resolution: "minipass-sized@npm:1.0.3"
+"minipass-sized@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "minipass-sized@npm:2.0.0"
   dependencies:
-    minipass: "npm:^3.0.0"
-  checksum: 79076749fcacf21b5d16dd596d32c3b6bf4d6e62abb43868fac21674078505c8b15eaca4e47ed844985a4514854f917d78f588fcd029693709417d8f98b2bd60
+    minipass: "npm:^7.1.2"
+  checksum: 1a1fd251aef4e24050a04ea03fdc0514960f7304a374fd01f352bfdb72c0a2c084ad05d63e76011c181cadfb38dbf487f8782e1e778337f6a099ac2da26b6d5d
   languageName: node
   linkType: hard
 
