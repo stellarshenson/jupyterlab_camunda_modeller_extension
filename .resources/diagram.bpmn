@@ -13,6 +13,7 @@
       <bpmn:incoming>Flow_1ybp80i</bpmn:incoming>
     </bpmn:endEvent>
     <bpmn:sequenceFlow id="Flow_1ybp80i" sourceRef="Activity_1bniq2o" targetRef="Event_1h59c43" />
+    <bpmn:group id="Group_0082c8l" />
   </bpmn:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1">
@@ -34,6 +35,9 @@
         <di:waypoint x="370" y="178" />
         <di:waypoint x="432" y="178" />
       </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Group_0082c8l_di" bpmnElement="Group_0082c8l">
+        <dc:Bounds x="250" y="290" width="420" height="90" />
+      </bpmndi:BPMNShape>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </bpmn:definitions>
