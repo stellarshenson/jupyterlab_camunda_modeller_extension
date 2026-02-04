@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:bioc="http://bpmn.io/schema/bpmn/biocolor/1.0" xmlns:color="http://www.omg.org/spec/BPMN/non-normative/color/1.0" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
   <bpmn:process id="Process_1" isExecutable="true">
     <bpmn:startEvent id="StartEvent_1">
       <bpmn:outgoing>Flow_0rqxr5g</bpmn:outgoing>
@@ -13,30 +13,36 @@
       <bpmn:incoming>Flow_1ybp80i</bpmn:incoming>
     </bpmn:endEvent>
     <bpmn:sequenceFlow id="Flow_1ybp80i" sourceRef="Activity_1bniq2o" targetRef="Event_1h59c43" />
-    <bpmn:group id="Group_0082c8l" />
+    <bpmn:group id="Group_0082c8l" categoryValueRef="CategoryValue_0yp18y0" />
   </bpmn:process>
+  <bpmn:category id="Category_1jznrwa">
+    <bpmn:categoryValue id="CategoryValue_0yp18y0" value="Reactive" />
+  </bpmn:category>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1">
       <bpmndi:BPMNShape id="_BPMNShape_StartEvent_1" bpmnElement="StartEvent_1">
-        <dc:Bounds x="180" y="160" width="36" height="36" />
+        <dc:Bounds x="320" y="392" width="36" height="36" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_1bniq2o_di" bpmnElement="Activity_1bniq2o">
-        <dc:Bounds x="270" y="138" width="100" height="80" />
+        <dc:Bounds x="410" y="370" width="100" height="80" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_1h59c43_di" bpmnElement="Event_1h59c43">
-        <dc:Bounds x="432" y="160" width="36" height="36" />
+        <dc:Bounds x="572" y="392" width="36" height="36" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="Flow_0rqxr5g_di" bpmnElement="Flow_0rqxr5g">
-        <di:waypoint x="216" y="178" />
-        <di:waypoint x="270" y="178" />
+        <di:waypoint x="356" y="410" />
+        <di:waypoint x="410" y="410" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_1ybp80i_di" bpmnElement="Flow_1ybp80i">
-        <di:waypoint x="370" y="178" />
-        <di:waypoint x="432" y="178" />
+        <di:waypoint x="510" y="410" />
+        <di:waypoint x="572" y="410" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNShape id="Group_0082c8l_di" bpmnElement="Group_0082c8l">
-        <dc:Bounds x="250" y="290" width="420" height="90" />
+      <bpmndi:BPMNShape id="Group_0082c8l_di" bpmnElement="Group_0082c8l" bioc:stroke="#0d4372" bioc:fill="#bbdefb" color:background-color="#bbdefb" color:border-color="#0d4372">
+        <dc:Bounds x="250" y="290" width="420" height="240" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="439" y="297" width="43" height="14" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
