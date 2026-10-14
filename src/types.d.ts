@@ -93,7 +93,7 @@ declare module 'bpmn-js/lib/Modeler' {
 }
 
 // Camunda BPMN moddle descriptor
-declare module 'camunda-bpmn-moddle/resources/camunda' {
+declare module 'camunda-bpmn-moddle/resources/camunda.json' {
   const camundaModdleDescriptor: Record<string, any>;
   export default camundaModdleDescriptor;
 }

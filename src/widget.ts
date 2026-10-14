@@ -1,13 +1,22 @@
+import { Dialog, showDialog } from '@jupyterlab/apputils';
 import { DocumentWidget } from '@jupyterlab/docregistry';
 import { ABCWidgetFactory, DocumentRegistry } from '@jupyterlab/docregistry';
-import { showDialog, Dialog } from '@jupyterlab/apputils';
+import { Contents } from '@jupyterlab/services';
+import { LabIcon, refreshIcon, ToolbarButton } from '@jupyterlab/ui-components';
 import { PromiseDelegate } from '@lumino/coreutils';
 import { Widget } from '@lumino/widgets';
 
 // Import bpmn-js modeler
 import BpmnModeler from 'bpmn-js/lib/Modeler';
-import camundaModdleDescriptor from 'camunda-bpmn-moddle/resources/camunda';
+import camundaModdleDescriptor from 'camunda-bpmn-moddle/resources/camunda.json';
 import BpmnColorPickerModule from 'bpmn-js-color-picker';
+
+import {
+  estimateAnnotationWidth,
+  getBorderIntersection,
+  getShapeCenter,
+  isPointOnBoundary
+} from './geometry';
 
 /**
  * Custom module to apply fill color to Groups
@@ -91,6 +100,11 @@ const EMPTY_BPMN = `<?xml version="1.0" encoding="UTF-8"?>
 </bpmn:definitions>`;
 
 /**
+ * bpmn-js command that groups one Realign Connectors run
+ */
+const REALIGN_COMMAND = 'jp-bpmn.realign-connectors';
+
+/**
  * Track all active widgets
  */
 const activeWidgets: Set<BpmnWidget> = new Set();
@@ -104,11 +118,11 @@ export class BpmnWidget extends Widget {
   private _container: HTMLDivElement;
   private _errorDiv: HTMLDivElement;
   private _modeler: BpmnModeler | null = null;
-  private _dirty = false;
   private _loading = false;
+  private _savedXml = '';
   private _popupObserver: MutationObserver | null = null;
 
-  constructor(context: DocumentRegistry.Context) {
+  constructor(context: DocumentRegistry.Context, contents: Contents.IManager) {
     super();
     this._context = context;
 
@@ -140,6 +154,26 @@ export class BpmnWidget extends Widget {
 
     // Listen for save requests
     context.saveState.connect(this._onSaveState, this);
+
+    // JupyterLab 4.6 revert leaves the dirty mark and skips the text of an
+    // empty file; File > Reload from Disk and the toolbar use it
+    const revert = context.revert.bind(context);
+    context.revert = async () => {
+      const before = context.model.toString();
+      await revert();
+      if (context.model.toString() === before) {
+        const disk = await contents.get(context.path, {
+          content: true,
+          format: 'text'
+        });
+        if (disk.content === '') {
+          context.model.fromString('');
+        }
+      }
+      // The model now holds the disk text (the empty-diagram template for an
+      // empty file, as on open)
+      context.model.dirty = false;
+    };
   }
 
   /**
@@ -147,13 +181,6 @@ export class BpmnWidget extends Widget {
    */
   get ready(): Promise<void> {
     return this._ready.promise;
-  }
-
-  /**
-   * Whether the widget has unsaved changes
-   */
-  get dirty(): boolean {
-    return this._dirty;
   }
 
   /**
@@ -193,15 +220,43 @@ export class BpmnWidget extends Widget {
       // This fixes popup positioning when JupyterLab has CSS transforms
       this._setupPopupObserver();
 
-      // Listen for changes to mark dirty and sync to model
+      // Sync to model on every change so Ctrl+S works
       const eventBus = this._modeler.get('eventBus');
       eventBus.on('commandStack.changed', () => {
         if (!this._loading) {
-          this._setDirty(true);
-          // Sync to model on every change so Ctrl+S works
           void this._syncToModel();
         }
       });
+      // Modeling calls made in postExecute join this command's undo step
+      this._modeler.get('commandStack').register(REALIGN_COMMAND, {
+        postExecute: () => this._realign()
+      });
+      // An open label editor holds typed text no command has seen yet
+      eventBus.on('directEditing.activate', () => {
+        this._context.model.dirty = true;
+      });
+      // The label editor stops every key before JupyterLab sees it, so
+      // Ctrl+S there completes the label and saves here
+      this.node.addEventListener(
+        'keydown',
+        async (event: KeyboardEvent) => {
+          const directEditing = this._modeler?.get('directEditing');
+          if (
+            (event.ctrlKey || event.metaKey) &&
+            !event.shiftKey &&
+            !event.altKey &&
+            event.keyCode === 83 && // S as Lumino reads it: CapsLock and non-Latin layouts too
+            directEditing?.isActive()
+          ) {
+            event.preventDefault();
+            event.stopPropagation();
+            directEditing.complete();
+            await this._syncToModel();
+            await this._context.save();
+          }
+        },
+        true
+      );
 
       // Load the diagram
       console.log('[BpmnWidget] Loading diagram...');
@@ -244,8 +299,6 @@ export class BpmnWidget extends Widget {
       // Fit diagram to viewport
       const canvas = this._modeler.get('canvas');
       canvas.zoom('fit-viewport');
-
-      this._setDirty(false);
     } catch (error) {
       this._showError(error);
     } finally {
@@ -266,21 +319,18 @@ export class BpmnWidget extends Widget {
       if (xml) {
         // Update model without triggering our contentChanged handler
         this._loading = true;
-        this._context.model.fromString(xml);
-        this._loading = false;
+        try {
+          this._context.model.fromString(xml);
+        } finally {
+          this._loading = false;
+        }
+        // fromString no longer marks the model dirty (JupyterLab 4.6)
+        this._context.model.dirty = true;
         console.log('[BpmnWidget] Synced to model');
       }
     } catch (error) {
       console.error('[BpmnWidget] Failed to sync to model:', error);
     }
-  }
-
-  /**
-   * Save the diagram back to the document model
-   */
-  async save(): Promise<void> {
-    await this._syncToModel();
-    this._setDirty(false);
   }
 
   /**
@@ -291,8 +341,16 @@ export class BpmnWidget extends Widget {
     state: DocumentRegistry.SaveState
   ): void {
     if (state === 'started') {
-      // Model should already be synced, but ensure it's up to date
-      console.log('[BpmnWidget] Save started, syncing model...');
+      this._savedXml = this._context.model.toString();
+    } else if (state === 'completed') {
+      // The context marks the model clean after the write, even when an
+      // edit arrived during the save or a label editor is still open
+      if (
+        this._context.model.toString() !== this._savedXml ||
+        this._modeler?.get('directEditing').isActive()
+      ) {
+        this._context.model.dirty = true;
+      }
     }
   }
 
@@ -300,19 +358,11 @@ export class BpmnWidget extends Widget {
    * Handle content change signal (external file change)
    */
   private _onContentChanged(): void {
-    // Only reload if not currently loading and not dirty
-    // If dirty, user has unsaved changes - don't overwrite them
-    if (!this._loading && !this._dirty) {
+    // Our own edits are already in the model, so any other change
+    // (Reload from Disk, revert) replaces the diagram
+    if (!this._loading) {
       void this._loadDiagram();
     }
-  }
-
-  /**
-   * Set dirty state and update title
-   */
-  private _setDirty(dirty: boolean): void {
-    this._dirty = dirty;
-    // JupyterLab handles dirty indicator via DocumentWidget
   }
 
   /**
@@ -409,6 +459,37 @@ export class BpmnWidget extends Widget {
   }
 
   /**
+   * Zoom one step in (1) or out (-1) around the centre of the view
+   */
+  zoom(direction: 1 | -1): void {
+    this._modeler?.get('zoomScroll').stepZoom(direction);
+  }
+
+  /**
+   * Fit the whole diagram into the view, as on open
+   */
+  fit(): void {
+    this._modeler?.get('canvas').zoom('fit-viewport');
+  }
+
+  /**
+   * Reload the diagram from disk, asking first when there are unsaved edits
+   */
+  async reload(): Promise<void> {
+    if (this._context.model.dirty) {
+      const result = await showDialog({
+        title: 'Reload Diagram from Disk',
+        body: 'Discard the unsaved changes and reload the diagram from disk?',
+        buttons: [Dialog.cancelButton(), Dialog.warnButton({ label: 'Reload' })]
+      });
+      if (!result.button.accept) {
+        return;
+      }
+    }
+    await this._context.revert();
+  }
+
+  /**
    * Realign connectors by widening text annotations and re-routing associations
    */
   realignConnectors(): void {
@@ -418,212 +499,69 @@ export class BpmnWidget extends Widget {
     }
 
     try {
-      const modeling = this._modeler.get('modeling');
-      const elementRegistry = this._modeler.get('elementRegistry');
-
-      // Find all text annotations
-      const textAnnotations = elementRegistry.filter(
-        (el: any) => el.type === 'bpmn:TextAnnotation'
-      );
-
-      console.log(
-        `[BpmnWidget] Found ${textAnnotations.length} text annotations`
-      );
-
-      // Resize each text annotation based on text content
-      textAnnotations.forEach((annotation: any) => {
-        const text = annotation.businessObject?.text || '';
-        // Estimate required width: ~7px per character, min 100px, max 400px
-        const estimatedWidth = Math.max(100, Math.min(400, text.length * 7));
-
-        // Only resize if width needs to increase
-        if (estimatedWidth > annotation.width) {
-          console.log(
-            `[BpmnWidget] Resizing annotation ${annotation.id}: ${annotation.width} -> ${estimatedWidth}`
-          );
-          modeling.resizeShape(annotation, {
-            x: annotation.x,
-            y: annotation.y,
-            width: estimatedWidth,
-            height: annotation.height
-          });
-        }
-      });
-
-      // Find all associations
-      const associations = elementRegistry.filter(
-        (el: any) => el.type === 'bpmn:Association'
-      );
-
-      console.log(`[BpmnWidget] Found ${associations.length} associations`);
-
-      // Re-route associations where endpoint is not on target boundary
-      associations.forEach((assoc: any) => {
-        const source = assoc.source;
-        const target = assoc.target;
-
-        if (!source || !target) {
-          console.warn(
-            `[BpmnWidget] Association ${assoc.id} missing source or target`
-          );
-          return;
-        }
-
-        // Check if endpoint is already on target boundary
-        const waypoints = assoc.waypoints;
-        if (waypoints && waypoints.length >= 2) {
-          const endpoint = waypoints[waypoints.length - 1];
-          if (this._isPointOnBoundary(endpoint, target)) {
-            console.log(
-              `[BpmnWidget] Skipping ${assoc.id} - endpoint already on boundary`
-            );
-            return;
-          }
-        }
-
-        // Calculate centers
-        const sourceCenter = this._getShapeCenter(source);
-        const targetCenter = this._getShapeCenter(target);
-
-        // Calculate border intersection points
-        const sourcePoint = this._getBorderIntersection(
-          source,
-          sourceCenter,
-          targetCenter
-        );
-        const targetPoint = this._getBorderIntersection(
-          target,
-          targetCenter,
-          sourceCenter
-        );
-
-        console.log(
-          `[BpmnWidget] Updating waypoints for ${assoc.id}: ` +
-            `(${sourcePoint.x}, ${sourcePoint.y}) -> (${targetPoint.x}, ${targetPoint.y})`
-        );
-
-        modeling.updateWaypoints(assoc, [sourcePoint, targetPoint]);
-      });
-
-      console.log('[BpmnWidget] Realign connectors complete');
+      // Nothing to change: no empty undo step and no unsaved mark
+      if (
+        !this._annotationsToWiden().length &&
+        !this._associationsToReroute().length
+      ) {
+        return;
+      }
+      this._modeler.get('commandStack').execute(REALIGN_COMMAND, {});
     } catch (error) {
       console.error('[BpmnWidget] Failed to realign connectors:', error);
     }
   }
 
   /**
-   * Get the center point of a shape
+   * Text annotations narrower than their text needs
    */
-  private _getShapeCenter(shape: any): { x: number; y: number } {
-    return {
-      x: shape.x + shape.width / 2,
-      y: shape.y + shape.height / 2
-    };
+  private _annotationsToWiden(): any[] {
+    return this._modeler!.get('elementRegistry').filter(
+      (el: any) =>
+        el.type === 'bpmn:TextAnnotation' &&
+        estimateAnnotationWidth(el.businessObject?.text || '') > el.width
+    );
   }
 
   /**
-   * Check if a point is on the boundary of a shape (within tolerance)
+   * Associations whose end point is not on the target border
    */
-  private _isPointOnBoundary(
-    point: { x: number; y: number },
-    shape: any,
-    tolerance: number = 5
-  ): boolean {
-    const { x, y, width, height } = shape;
-    const left = x;
-    const right = x + width;
-    const top = y;
-    const bottom = y + height;
-
-    // Check if point is within shape bounds (with tolerance)
-    const withinX = point.x >= left - tolerance && point.x <= right + tolerance;
-    const withinY = point.y >= top - tolerance && point.y <= bottom + tolerance;
-
-    if (!withinX || !withinY) {
-      return false;
-    }
-
-    // Check if point is on one of the edges (within tolerance)
-    const onLeft = Math.abs(point.x - left) <= tolerance;
-    const onRight = Math.abs(point.x - right) <= tolerance;
-    const onTop = Math.abs(point.y - top) <= tolerance;
-    const onBottom = Math.abs(point.y - bottom) <= tolerance;
-
-    return onLeft || onRight || onTop || onBottom;
+  private _associationsToReroute(): any[] {
+    return this._modeler!.get('elementRegistry').filter((el: any) => {
+      if (el.type !== 'bpmn:Association' || !el.source || !el.target) {
+        return false;
+      }
+      const waypoints = el.waypoints;
+      return !(
+        waypoints &&
+        waypoints.length >= 2 &&
+        isPointOnBoundary(waypoints[waypoints.length - 1], el.target)
+      );
+    });
   }
 
   /**
-   * Calculate intersection point on shape border along line from inside to outside
+   * Widen annotations, then redraw associations as one segment between the
+   * shape borders. Runs inside the realign command, so one undo reverts it.
    */
-  private _getBorderIntersection(
-    shape: any,
-    inside: { x: number; y: number },
-    outside: { x: number; y: number }
-  ): { x: number; y: number } {
-    const { x, y, width, height } = shape;
-
-    // Shape bounds
-    const left = x;
-    const right = x + width;
-    const top = y;
-    const bottom = y + height;
-
-    // Direction vector from inside to outside
-    const dx = outside.x - inside.x;
-    const dy = outside.y - inside.y;
-
-    // Handle zero-length direction
-    if (dx === 0 && dy === 0) {
-      return { x: inside.x, y: top }; // Default to top center
-    }
-
-    // Calculate intersection with each edge
-    const intersections: Array<{ x: number; y: number; t: number }> = [];
-
-    // Left edge (x = left)
-    if (dx !== 0) {
-      const t = (left - inside.x) / dx;
-      const iy = inside.y + t * dy;
-      if (t > 0 && iy >= top && iy <= bottom) {
-        intersections.push({ x: left, y: iy, t });
-      }
-    }
-
-    // Right edge (x = right)
-    if (dx !== 0) {
-      const t = (right - inside.x) / dx;
-      const iy = inside.y + t * dy;
-      if (t > 0 && iy >= top && iy <= bottom) {
-        intersections.push({ x: right, y: iy, t });
-      }
-    }
-
-    // Top edge (y = top)
-    if (dy !== 0) {
-      const t = (top - inside.y) / dy;
-      const ix = inside.x + t * dx;
-      if (t > 0 && ix >= left && ix <= right) {
-        intersections.push({ x: ix, y: top, t });
-      }
-    }
-
-    // Bottom edge (y = bottom)
-    if (dy !== 0) {
-      const t = (bottom - inside.y) / dy;
-      const ix = inside.x + t * dx;
-      if (t > 0 && ix >= left && ix <= right) {
-        intersections.push({ x: ix, y: bottom, t });
-      }
-    }
-
-    // Return intersection with smallest positive t (closest to inside point)
-    if (intersections.length > 0) {
-      intersections.sort((a, b) => a.t - b.t);
-      return { x: intersections[0].x, y: intersections[0].y };
-    }
-
-    // Fallback: return center of closest edge
-    return { x: inside.x, y: top };
+  private _realign(): void {
+    const modeling = this._modeler!.get('modeling');
+    this._annotationsToWiden().forEach((annotation: any) => {
+      modeling.resizeShape(annotation, {
+        x: annotation.x,
+        y: annotation.y,
+        width: estimateAnnotationWidth(annotation.businessObject?.text || ''),
+        height: annotation.height
+      });
+    });
+    this._associationsToReroute().forEach((assoc: any) => {
+      const sourceCenter = getShapeCenter(assoc.source);
+      const targetCenter = getShapeCenter(assoc.target);
+      modeling.updateWaypoints(assoc, [
+        getBorderIntersection(assoc.source, sourceCenter, targetCenter),
+        getBorderIntersection(assoc.target, targetCenter, sourceCenter)
+      ]);
+    });
   }
 
   /**
@@ -663,36 +601,14 @@ export class BpmnWidget extends Widget {
 }
 
 /**
- * Custom DocumentWidget that prompts before closing unsaved diagrams
+ * Four rectangle corners, the common fit-to-view icon (Material "crop_free")
  */
-class BpmnDocumentWidget extends DocumentWidget<BpmnWidget> {
-  /**
-   * Handle close request - prompt if unsaved changes
-   */
-  protected onCloseRequest(msg: any): void {
-    const bpmnWidget = this.content;
-
-    if (bpmnWidget.dirty) {
-      void showDialog({
-        title: 'Unsaved Changes',
-        body: `"${this.context.localPath}" has unsaved changes. Are you sure you want to close?`,
-        buttons: [
-          Dialog.cancelButton({ label: 'Cancel' }),
-          Dialog.warnButton({ label: 'Close Without Saving' })
-        ]
-      }).then(result => {
-        if (result.button.accept) {
-          // User confirmed, close the widget
-          super.onCloseRequest(msg);
-        }
-        // Otherwise, do nothing (cancel close)
-      });
-    } else {
-      // No unsaved changes, close normally
-      super.onCloseRequest(msg);
-    }
-  }
-}
+const fitIcon = new LabIcon({
+  name: 'bpmn:fit',
+  svgstr: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <path class="jp-icon3" fill="#616161" d="M3 5v4h2V5h4V3H5c-1.1 0-2 .9-2 2zm2 10H3v4c0 1.1.9 2 2 2h4v-2H5v-4zm14 4h-4v2h4c1.1 0 2-.9 2-2v-4h-2v4zm0-16h-4v2h4v4h2V5c0-1.1-.9-2-2-2z"/>
+</svg>`
+});
 
 /**
  * A widget factory for BPMN diagrams
@@ -701,15 +617,61 @@ export class BpmnFactory extends ABCWidgetFactory<
   DocumentWidget<BpmnWidget>,
   DocumentRegistry.IModel
 > {
+  constructor(
+    options: DocumentRegistry.IWidgetFactoryOptions<
+      DocumentWidget<BpmnWidget>
+    > & { contents: Contents.IManager }
+  ) {
+    super(options);
+    this._contents = options.contents;
+  }
+
   /**
    * Create a new widget given a context.
    */
   protected createNewWidget(
     context: DocumentRegistry.Context
   ): DocumentWidget<BpmnWidget> {
-    const content = new BpmnWidget(context);
-    const widget = new BpmnDocumentWidget({ content, context });
-
+    const content = new BpmnWidget(context, this._contents);
+    const widget = new DocumentWidget({ content, context });
+    widget.toolbar.addItem(
+      'bpmn-refresh',
+      new ToolbarButton({
+        icon: refreshIcon,
+        tooltip: 'Reload diagram from disk',
+        noFocusOnClick: true,
+        onClick: () => void content.reload()
+      })
+    );
+    widget.toolbar.addItem(
+      'bpmn-zoom-out',
+      new ToolbarButton({
+        label: '-',
+        tooltip: 'Zoom out',
+        noFocusOnClick: true,
+        onClick: () => content.zoom(-1)
+      })
+    );
+    widget.toolbar.addItem(
+      'bpmn-zoom-in',
+      new ToolbarButton({
+        label: '+',
+        tooltip: 'Zoom in',
+        noFocusOnClick: true,
+        onClick: () => content.zoom(1)
+      })
+    );
+    widget.toolbar.addItem(
+      'bpmn-fit',
+      new ToolbarButton({
+        icon: fitIcon,
+        tooltip: 'Fit diagram to view',
+        noFocusOnClick: true,
+        onClick: () => content.fit()
+      })
+    );
     return widget;
   }
+
+  private _contents: Contents.IManager;
 }

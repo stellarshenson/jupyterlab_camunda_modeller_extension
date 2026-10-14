@@ -2,6 +2,7 @@ import {
   JupyterFrontEnd,
   JupyterFrontEndPlugin
 } from '@jupyterlab/application';
+import { IEditorLanguageRegistry } from '@jupyterlab/codemirror';
 import { DocumentWidget } from '@jupyterlab/docregistry';
 import { LabIcon } from '@jupyterlab/ui-components';
 
@@ -72,7 +73,11 @@ const plugin: JupyterFrontEndPlugin<void> = {
   description:
     'JupyterLab extension to model BPMN diagrams and open Camunda BPMN files',
   autoStart: true,
-  activate: (app: JupyterFrontEnd) => {
+  optional: [IEditorLanguageRegistry],
+  activate: (
+    app: JupyterFrontEnd,
+    languages: IEditorLanguageRegistry | null
+  ) => {
     console.log(
       'JupyterLab extension jupyterlab_camunda_modeller_extension is activated!'
     );
@@ -91,6 +96,15 @@ const plugin: JupyterFrontEndPlugin<void> = {
     });
     console.log('BPMN file type registered with icon');
 
+    // The text editor picks its language by file extension
+    languages?.addLanguage({
+      name: 'BPMN',
+      displayName: 'BPMN',
+      mime: 'application/bpmn+xml',
+      extensions: ['bpmn'],
+      load: async () => (await languages.getLanguage('xml'))!.support!
+    });
+
     // Debug: Check if file type was registered correctly
     const registeredType = docRegistry.getFileType(FILE_TYPE_NAME);
     console.log(
@@ -106,7 +120,8 @@ const plugin: JupyterFrontEndPlugin<void> = {
       modelName: 'text',
       fileTypes: [FILE_TYPE_NAME],
       defaultFor: [FILE_TYPE_NAME],
-      readOnly: false
+      readOnly: false,
+      contents: app.serviceManager.contents
     });
 
     docRegistry.addWidgetFactory(factory);

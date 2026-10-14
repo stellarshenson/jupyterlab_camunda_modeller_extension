@@ -28,7 +28,7 @@ JupyterLab extension for modelling BPMN diagrams and opening Camunda BPMN diagra
 
 - JupyterLab 4.x frontend extension (TypeScript)
 - Jupyter Server extension (Python)
-- BPMN/Camunda diagram support
+- BPMN/Camunda diagram support via `bpmn-js` (Modeler), `camunda-bpmn-moddle` and `bpmn-js-color-picker`
 
 **Package Names**:
 
@@ -41,6 +41,14 @@ JupyterLab extension for modelling BPMN diagrams and opening Camunda BPMN diagra
 - Use `make install` for development installation
 - Use `make build` for production builds
 - Use `make test` for running tests
+
+## Journal Rules (Project-Specific)
+
+- **APPEND ONLY**: New journal entries MUST be appended at the end of the file, never inserted between existing entries
+- Entries maintain strict chronological order by position - the last entry in the file is always the most recent work
+- Never reorder, move, or insert entries out of sequence
+- The Stellars **journal plugin** is the canonical tool for this file: create via `/journal:create`, append via `/journal:update`, archive via `/journal:archive`. The `journal:journal` skill auto-triggers on any mention of "journal" and runs `journal-tools check` after every write
+- Direct edits to `JOURNAL.md` are a last resort - prefer the plugin so modus secundis format, continuous numbering and append-only order are enforced automatically
 
 ## Strengthened Rules
 

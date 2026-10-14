@@ -20,11 +20,15 @@ Model BPMN diagrams and open Camunda BPMN files directly in JupyterLab. This ext
 - **BPMN diagram modelling** - Create and edit BPMN 2.0 diagrams visually
 - **Camunda BPMN support** - Open and modify Camunda-specific BPMN files
 - **JupyterLab integration** - Native file browser integration for .bpmn files
-- **Server-side processing** - Backend support for diagram operations
+- **Element colouring** - Colour picker in the element context pad
+- **Export as SVG** - Download the diagram as an SVG file from the canvas context menu
+- **Realign Connectors** - Widen text annotations and redraw their association lines from the canvas context menu
+- **Toolbar** - Reload from disk, zoom out, zoom in and fit the diagram to the view
+- **Text editor** - Open With > Editor shows the BPMN XML with syntax highlighting, closing-tag completion and folding
 
 ## Requirements
 
-- JupyterLab >= 4.0.0
+- JupyterLab >= 4.6
 
 ## Installation
 
@@ -37,6 +41,10 @@ pip install jupyterlab-camunda-modeller-extension
 ```bash
 pip uninstall jupyterlab_camunda_modeller_extension
 ```
+
+## Contributing
+
+If you would like to contribute to this extension, please refer to the [Contributing Guide](CONTRIBUTING.md).
 
 ---
 

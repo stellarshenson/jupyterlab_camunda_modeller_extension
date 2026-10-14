@@ -4,3 +4,5 @@ node_modules
 **/package.json
 !/package.json
 jupyterlab_camunda_modeller_extension
+eslint.config.mjs
+.venv
