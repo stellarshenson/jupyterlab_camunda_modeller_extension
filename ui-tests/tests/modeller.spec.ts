@@ -574,6 +574,52 @@ test.describe('Colour', () => {
       .toEqual(['rgb(255, 204, 0)', '0.3']);
   });
 
+  test('ACC-COLOR-65 coloured annotation shows its fill at full strength', async ({
+    page,
+    tmpPath
+  }) => {
+    const xml = bpmn(
+      `    <bpmn:textAnnotation id="Note_1"><bpmn:text>Saved red</bpmn:text></bpmn:textAnnotation>
+    <bpmn:textAnnotation id="Note_2"><bpmn:text>Coloured now</bpmn:text></bpmn:textAnnotation>`,
+      shape(
+        'Note_1',
+        100,
+        80,
+        160,
+        40,
+        'bioc:fill="#ffcdd2" bioc:stroke="#831311"'
+      ) + shape('Note_2', 100, 200, 160, 40)
+    );
+    await writeFile(page, `${tmpPath}/${NAME}`, xml);
+    await openDiagram(page, `${tmpPath}/${NAME}`);
+    // The colour picker's Red entry runs this command
+    await page.evaluate(() => {
+      const modeler = (window as any).jupyterapp.shell.currentWidget.content
+        ._modeler;
+      modeler
+        .get('modeling')
+        .setColor([modeler.get('elementRegistry').get('Note_2')], {
+          fill: '#FFCDD2',
+          stroke: '#831311'
+        });
+    });
+    for (const id of ['Note_1', 'Note_2']) {
+      const rect = page.locator(
+        `.jp-BpmnWidget [data-element-id="${id}"] .djs-visual rect`
+      );
+      await expect
+        .poll(() =>
+          rect
+            .first()
+            .evaluate((r: any) => [
+              getComputedStyle(r).fill,
+              getComputedStyle(r).fillOpacity
+            ])
+        )
+        .toEqual(['rgb(255, 205, 210)', '1']);
+    }
+  });
+
   test('ACC-COLOR-21 closing the diagram removes the moved popup', async ({
     page,
     tmpPath
@@ -814,6 +860,17 @@ test.describe('Styling', () => {
 });
 
 test.describe('Toolbar', () => {
+  const CLEAN = bpmn(
+    `    <bpmn:startEvent id="S"><bpmn:outgoing>F</bpmn:outgoing></bpmn:startEvent>
+    <bpmn:endEvent id="E"><bpmn:incoming>F</bpmn:incoming></bpmn:endEvent>
+    <bpmn:sequenceFlow id="F" sourceRef="S" targetRef="E"/>`,
+    shape('S', 180, 160, 36, 36) +
+      shape('E', 380, 160, 36, 36) +
+      edge('F', [
+        [216, 178],
+        [380, 178]
+      ])
+  );
   const TASK = bpmn(
     '    <bpmn:task id="Task_1" name="Task"/>',
     shape('Task_1', 200, 120, 100, 80)
@@ -841,6 +898,56 @@ test.describe('Toolbar', () => {
       };
     });
   }
+
+  test('DEF-VIEW-23 clicked buttons do not stay pressed', async ({
+    page,
+    tmpPath
+  }) => {
+    await writeFile(page, `${tmpPath}/${NAME}`, TASK);
+    await openDiagram(page, `${tmpPath}/${NAME}`);
+    for (const title of [
+      'Zoom in',
+      'Zoom out',
+      'Fit diagram to view',
+      'Reload diagram from disk'
+    ]) {
+      await button(page, title).click();
+      await expect(button(page, title)).toHaveAttribute(
+        'aria-pressed',
+        'false'
+      );
+    }
+  });
+
+  test('ACC-VALID-75 Validate lists the issues of the unsaved diagram', async ({
+    page,
+    tmpPath
+  }) => {
+    await writeFile(page, `${tmpPath}/${NAME}`, CLEAN);
+    await openDiagram(page, `${tmpPath}/${NAME}`);
+    await addTaskWithPalette(page);
+    await button(page, 'Check the diagram for problems').click();
+    const dialog = page.locator('.jp-Dialog');
+    await expect(dialog).toContainText('Validation');
+    const rows = dialog.locator('.jp-BpmnValidation-issue');
+    await expect(rows).toHaveCount(1);
+    await expect(rows.first()).toContainText('warning');
+    await expect(rows.first()).toContainText(
+      'has no incoming or outgoing sequence flow'
+    );
+    await dialog.locator('.jp-Dialog-button.jp-mod-accept').click();
+  });
+
+  test('ACC-VALID-76 Validate on a clean diagram says no issues found', async ({
+    page,
+    tmpPath
+  }) => {
+    await writeFile(page, `${tmpPath}/${NAME}`, CLEAN);
+    await openDiagram(page, `${tmpPath}/${NAME}`);
+    await button(page, 'Check the diagram for problems').click();
+    await expect(page.locator('.jp-Dialog')).toContainText('No issues found');
+    await page.locator('.jp-Dialog .jp-mod-accept').click();
+  });
 
   test('ACC-VIEW-39 zoom in button zooms one step around the centre', async ({
     page,

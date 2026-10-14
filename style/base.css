@@ -230,3 +230,19 @@ body > .djs-popup-parent .djs-popup.color-picker .entry:hover {
 .jp-BpmnWidget .djs-direct-editing-parent {
   opacity: 1 !important;
 }
+
+/*
+   Validation dialog: one row per issue
+*/
+.jp-BpmnValidation td {
+  padding: 2px 8px;
+  vertical-align: top;
+}
+
+.jp-BpmnValidation-error td:first-child {
+  color: var(--jp-error-color1);
+}
+
+.jp-BpmnValidation-warning td:first-child {
+  color: var(--jp-warn-color1);
+}

@@ -201,3 +201,15 @@ README and other user-facing text
   - test-tags: MANUAL
   - log: 2026-10-14T10:12:12Z @kj added
   - log: 2026-10-14T10:36:35Z @kj closed: fixed: README Features lists colouring, Export as SVG and Realign Connectors
+
+## Toolbar `VIEW`
+
+Document toolbar of the BPMN view: refresh, zoom and fit buttons
+
+- [x] `DEF-VIEW-23` **Clicked toolbar buttons stay highlighted** - MINOR; After a click the refresh, zoom out, zoom in and fit buttons stay highlighted as if switched on, and report aria-pressed true to screen readers; a second click turns the highlight off.
+  - evidence: toolbar buttons built by actionButton(), which resets pressed after ToolbarButton flips it (src/widget.ts); spec DEF-VIEW-23 clicks all four buttons and asserts aria-pressed false; fails on the previous build (logs/galata-mutant-def-view-23.log), Toolbar block 6/6 green (logs/galata-def-view-23.log)
+  - repro: Open a .bpmn file, click Zoom in, move the mouse away: the button keeps a lit box
+  - test-tags: FUNCTIONAL
+  - root-cause: 2026-10-14T14:10:09Z @kj JupyterLab 4.6 ToolbarButton flips its pressed state on every click (ui-components toolbar.js onClick getter), which suits toggles; our four buttons are actions built with ToolbarButton.
+  - log: 2026-10-14T14:10:09Z @kj added
+  - log: 2026-10-14T14:12:18Z @kj closed

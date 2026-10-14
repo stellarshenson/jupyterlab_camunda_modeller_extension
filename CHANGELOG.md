@@ -4,6 +4,19 @@
 
 <!-- <END NEW CHANGELOG ENTRY> -->
 
+## [1.0.33] - 2026-10-14
+
+### Added
+
+- `bpmn-validate` command that reports malformed XML, DOCTYPE declarations, non-BPMN files, duplicate ids, broken references, a missing diagram, elements without a shape, unreachable or disconnected steps, missing start or end events, unnamed gateway conditions and gateways without a default flow; errors only for a broken file, everything else a warning; text or `--json` output
+- Validate button in the diagram toolbar that checks the diagram as shown, unsaved edits included, and lists the issues in a dialog, through a new authenticated server endpoint
+- Agent skill for AI coding agents, shipped in the wheel under `share/jupyter/agents/skills/`: mandatory validation after every agent edit, the colour picker palette and colour attributes, and modelling conventions for task types, gateway conditions, process annotations and the questions to ask before designing a process
+
+### Fixed
+
+- A coloured text annotation showed its colour only on the thin bracket line; it now shows the fill colour as its background at full strength
+- Toolbar buttons stayed highlighted after a click
+
 ## [1.0.32] - 2026-10-14
 
 ### Added

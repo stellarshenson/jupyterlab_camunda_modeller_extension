@@ -1,8 +1,13 @@
-import { Dialog, showDialog } from '@jupyterlab/apputils';
+import { Dialog, showDialog, showErrorMessage } from '@jupyterlab/apputils';
 import { DocumentWidget } from '@jupyterlab/docregistry';
 import { ABCWidgetFactory, DocumentRegistry } from '@jupyterlab/docregistry';
-import { Contents } from '@jupyterlab/services';
-import { LabIcon, refreshIcon, ToolbarButton } from '@jupyterlab/ui-components';
+import { Contents, ServerConnection } from '@jupyterlab/services';
+import {
+  LabIcon,
+  refreshIcon,
+  ToolbarButton,
+  ToolbarButtonComponent
+} from '@jupyterlab/ui-components';
 import { PromiseDelegate } from '@lumino/coreutils';
 import { Widget } from '@lumino/widgets';
 
@@ -11,6 +16,7 @@ import BpmnModeler from 'bpmn-js/lib/Modeler';
 import camundaModdleDescriptor from 'camunda-bpmn-moddle/resources/camunda.json';
 import BpmnColorPickerModule from 'bpmn-js-color-picker';
 
+import { requestAPI } from './request';
 import {
   estimateAnnotationWidth,
   getBorderIntersection,
@@ -19,10 +25,18 @@ import {
 } from './geometry';
 
 /**
- * Custom module to apply fill color to Groups
- * Groups don't get fill color by default in bpmn-js
+ * Fill opacity per element type. bpmn-js draws Groups and Text Annotations
+ * with fill none, so a picker colour would show only on their thin stroke
  */
-function GroupColorHandler(eventBus: any, elementRegistry: any) {
+const FILL_OPACITY: Record<string, string> = {
+  'bpmn:Group': '0.3', // Semi-transparent like lanes
+  'bpmn:TextAnnotation': '1'
+};
+
+/**
+ * Custom module to apply the fill color to Groups and Text Annotations
+ */
+function FillColorHandler(eventBus: any, elementRegistry: any) {
   // Helper to get fill color from element's di
   function getFillColor(element: any): string | null {
     const di = element.di;
@@ -35,8 +49,8 @@ function GroupColorHandler(eventBus: any, elementRegistry: any) {
     );
   }
 
-  // Helper to apply fill to group
-  function applyGroupFill(element: any) {
+  // Helper to apply fill to the element's rect
+  function applyFill(element: any) {
     const fill = getFillColor(element);
     if (fill) {
       const gfx = elementRegistry.getGraphics(element);
@@ -44,37 +58,37 @@ function GroupColorHandler(eventBus: any, elementRegistry: any) {
         const rect = gfx.querySelector('.djs-visual rect');
         if (rect) {
           rect.style.fill = fill;
-          rect.style.fillOpacity = '0.3'; // Semi-transparent like lanes
+          rect.style.fillOpacity = FILL_OPACITY[element.type];
         }
       }
     }
   }
 
-  // Update group fill when element is changed (color applied)
+  // Update the fill when the element is changed (color applied)
   eventBus.on('element.changed', (event: any) => {
     const element = event.element;
-    if (element.type === 'bpmn:Group') {
-      applyGroupFill(element);
+    if (element.type in FILL_OPACITY) {
+      applyFill(element);
     }
   });
 
-  // Also handle initial render for groups with existing colors
+  // Also handle initial render for elements with existing colors
   eventBus.on('shape.added', (event: any) => {
     const element = event.element;
-    if (element.type === 'bpmn:Group') {
+    if (element.type in FILL_OPACITY) {
       // Delay to ensure graphics are ready
       setTimeout(() => {
-        applyGroupFill(element);
+        applyFill(element);
       }, 0);
     }
   });
 }
 
-(GroupColorHandler as any).$inject = ['eventBus', 'elementRegistry'];
+(FillColorHandler as any).$inject = ['eventBus', 'elementRegistry'];
 
-const GroupColorModule = {
-  __init__: ['groupColorHandler'],
-  groupColorHandler: ['type', GroupColorHandler]
+const FillColorModule = {
+  __init__: ['fillColorHandler'],
+  fillColorHandler: ['type', FillColorHandler]
 };
 
 /**
@@ -121,10 +135,12 @@ export class BpmnWidget extends Widget {
   private _loading = false;
   private _savedXml = '';
   private _popupObserver: MutationObserver | null = null;
+  private _serverSettings: ServerConnection.ISettings;
 
   constructor(context: DocumentRegistry.Context, contents: Contents.IManager) {
     super();
     this._context = context;
+    this._serverSettings = contents.serverSettings;
 
     this.addClass('jp-BpmnWidget');
     this.title.label = context.localPath;
@@ -212,7 +228,7 @@ export class BpmnWidget extends Widget {
         moddleExtensions: {
           camunda: camundaModdleDescriptor
         },
-        additionalModules: [BpmnColorPickerModule, GroupColorModule]
+        additionalModules: [BpmnColorPickerModule, FillColorModule]
       });
       console.log('[BpmnWidget] BpmnModeler created');
 
@@ -473,6 +489,31 @@ export class BpmnWidget extends Widget {
   }
 
   /**
+   * Check the diagram as shown, unsaved edits included, and list the issues
+   */
+  async validate(): Promise<void> {
+    let issues: IValidationIssue[];
+    try {
+      ({ issues } = await requestAPI<{ issues: IValidationIssue[] }>(
+        'validate',
+        this._serverSettings,
+        {
+          method: 'POST',
+          body: JSON.stringify({ content: this._context.model.toString() })
+        }
+      ));
+    } catch (error) {
+      await showErrorMessage('Validation failed', error as Error);
+      return;
+    }
+    await showDialog({
+      title: 'Validation',
+      body: validationBody(issues),
+      buttons: [Dialog.okButton()]
+    });
+  }
+
+  /**
    * Reload the diagram from disk, asking first when there are unsaved edits
    */
   async reload(): Promise<void> {
@@ -611,6 +652,56 @@ const fitIcon = new LabIcon({
 });
 
 /**
+ * One issue reported by the server's bpmn-validate checks
+ */
+interface IValidationIssue {
+  severity: 'error' | 'warning';
+  code: string;
+  message: string;
+  line: number;
+  column: number;
+  element: string;
+}
+
+/**
+ * Dialog body: one row per issue (severity, element, message)
+ */
+function validationBody(issues: IValidationIssue[]): Widget {
+  const body = new Widget();
+  body.addClass('jp-BpmnValidation');
+  if (!issues.length) {
+    body.node.textContent = 'No issues found';
+    return body;
+  }
+  const table = document.createElement('table');
+  for (const issue of issues) {
+    const row = table.insertRow();
+    row.className = `jp-BpmnValidation-issue jp-BpmnValidation-${issue.severity}`;
+    for (const text of [issue.severity, issue.element, issue.message]) {
+      row.insertCell().textContent = text;
+    }
+  }
+  body.node.appendChild(table);
+  return body;
+}
+
+/**
+ * A toolbar button that runs an action. JupyterLab 4.6 ToolbarButton flips
+ * its pressed state on every click, which suits toggles only.
+ */
+function actionButton(props: ToolbarButtonComponent.IProps): ToolbarButton {
+  const button = new ToolbarButton({
+    ...props,
+    noFocusOnClick: true,
+    onClick: () => {
+      button.pressed = false;
+      props.onClick?.();
+    }
+  });
+  return button;
+}
+
+/**
  * A widget factory for BPMN diagrams
  */
 export class BpmnFactory extends ABCWidgetFactory<
@@ -636,38 +727,42 @@ export class BpmnFactory extends ABCWidgetFactory<
     const widget = new DocumentWidget({ content, context });
     widget.toolbar.addItem(
       'bpmn-refresh',
-      new ToolbarButton({
+      actionButton({
         icon: refreshIcon,
         tooltip: 'Reload diagram from disk',
-        noFocusOnClick: true,
         onClick: () => void content.reload()
       })
     );
     widget.toolbar.addItem(
       'bpmn-zoom-out',
-      new ToolbarButton({
+      actionButton({
         label: '-',
         tooltip: 'Zoom out',
-        noFocusOnClick: true,
         onClick: () => content.zoom(-1)
       })
     );
     widget.toolbar.addItem(
       'bpmn-zoom-in',
-      new ToolbarButton({
+      actionButton({
         label: '+',
         tooltip: 'Zoom in',
-        noFocusOnClick: true,
         onClick: () => content.zoom(1)
       })
     );
     widget.toolbar.addItem(
       'bpmn-fit',
-      new ToolbarButton({
+      actionButton({
         icon: fitIcon,
         tooltip: 'Fit diagram to view',
-        noFocusOnClick: true,
         onClick: () => content.fit()
+      })
+    );
+    widget.toolbar.addItem(
+      'bpmn-validate',
+      actionButton({
+        label: 'Validate',
+        tooltip: 'Check the diagram for problems',
+        onClick: () => void content.validate()
       })
     );
     return widget;
