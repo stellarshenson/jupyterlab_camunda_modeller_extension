@@ -146,6 +146,24 @@ Element colouring through bpmn-js-color-picker
   - log: 2026-10-14T10:12:00Z @kj added
   - log: 2026-10-14T10:12:01Z @kj backfilled from .claude/JOURNAL.md entry 10, fixed in v1.0.30
   - log: 2026-10-14T10:36:34Z @kj closed: fixed in v1.0.30, verified
+- [x] `DEF-COLOR-24` **Annotation colour fills its background** - MEDIUM; colouring a text annotation paints its background with the picker fill; expected: background stays empty, only bracket and text take the colour, at full strength
+  - evidence: colour module fills only groups again (src/widget.ts GroupColorHandler); spec ACC-COLOR-65: saved and runtime-coloured annotations rect fill none, bracket stroke and text fill rgb(131, 19, 17), opacity 1; failed on the 1.0.33 build with rect rgb(255, 205, 210) (logs/galata-def-color-24-before.log); Colour block 5/5 green incl. ACC-COLOR-20 (logs/galata-def-color-24.log); make test green, 2026-10-14
+  - related: ACC-COLOR-65
+  - test-tags: FUNCTIONAL
+  - repro: colour a text annotation Red; its background turns #ffcdd2
+  - root-cause: 2026-10-14T16:33:00Z @kj ACC-COLOR-65 asked for the fill on the annotation rect, so FillColorHandler paints the di fill there at opacity 1 (src/widget.ts FILL_OPACITY)
+  - log: 2026-10-14T16:33:00Z @kj added
+  - log: 2026-10-14T16:33:15Z @kj edited test-tags added "FUNCTIONAL"
+  - log: 2026-10-14T16:35:49Z @kj closed
+- [x] `DEF-COLOR-25` **Annotation colour dark and dull** - MEDIUM; a coloured text annotation draws its bracket and text in the picker stroke colour, a dark border shade (#831311 for Red); expected: a brighter, more saturated colour for all five picker colours
+  - evidence: AnnotationColorHandler (src/widget.ts ANNOTATION_COLOR); spec ACC-COLOR-65: saved Red, runtime Red and saved Blue annotations rect fill none, bracket stroke and text fill rgb(211, 47, 47) and rgb(25, 118, 210), opacity 1; failed on the previous build with rgb(131, 19, 17) (logs/galata-def-color-25-before.log); Colour block 5/5 green (logs/galata-def-color-25.log); make test green, 2026-10-14
+  - related: DEF-COLOR-24, ACC-COLOR-65
+  - test-tags: FUNCTIONAL
+  - repro: colour a text annotation Red; bracket and text are dark maroon #831311
+  - root-cause: 2026-10-14T16:39:59Z @kj bpmn-js draws annotation bracket and text in the di stroke, and the picker strokes are dark shades meant for borders next to a pale fill
+  - log: 2026-10-14T16:39:59Z @kj added
+  - log: 2026-10-14T16:39:59Z @kj edited test-tags added "FUNCTIONAL"
+  - log: 2026-10-14T16:40:00Z @kj closed
 
 ## Realign connectors `ALIGN`
 

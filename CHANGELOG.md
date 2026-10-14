@@ -4,6 +4,16 @@
 
 <!-- <END NEW CHANGELOG ENTRY> -->
 
+## [1.0.34] - 2026-10-14
+
+### Changed
+
+- A coloured text annotation draws its bracket and text in a brighter, more saturated colour (Blue, Orange, Green, Red, Purple); the saved file keeps the colour picker values
+
+### Fixed
+
+- Colouring a text annotation filled its background; the background now stays empty
+
 ## [1.0.33] - 2026-10-14
 
 ### Added

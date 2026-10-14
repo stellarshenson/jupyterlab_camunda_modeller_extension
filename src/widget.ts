@@ -25,18 +25,10 @@ import {
 } from './geometry';
 
 /**
- * Fill opacity per element type. bpmn-js draws Groups and Text Annotations
- * with fill none, so a picker colour would show only on their thin stroke
+ * Custom module to apply fill color to Groups
+ * Groups don't get fill color by default in bpmn-js
  */
-const FILL_OPACITY: Record<string, string> = {
-  'bpmn:Group': '0.3', // Semi-transparent like lanes
-  'bpmn:TextAnnotation': '1'
-};
-
-/**
- * Custom module to apply the fill color to Groups and Text Annotations
- */
-function FillColorHandler(eventBus: any, elementRegistry: any) {
+function GroupColorHandler(eventBus: any, elementRegistry: any) {
   // Helper to get fill color from element's di
   function getFillColor(element: any): string | null {
     const di = element.di;
@@ -49,8 +41,8 @@ function FillColorHandler(eventBus: any, elementRegistry: any) {
     );
   }
 
-  // Helper to apply fill to the element's rect
-  function applyFill(element: any) {
+  // Helper to apply fill to group
+  function applyGroupFill(element: any) {
     const fill = getFillColor(element);
     if (fill) {
       const gfx = elementRegistry.getGraphics(element);
@@ -58,37 +50,96 @@ function FillColorHandler(eventBus: any, elementRegistry: any) {
         const rect = gfx.querySelector('.djs-visual rect');
         if (rect) {
           rect.style.fill = fill;
-          rect.style.fillOpacity = FILL_OPACITY[element.type];
+          rect.style.fillOpacity = '0.3'; // Semi-transparent like lanes
         }
       }
     }
   }
 
-  // Update the fill when the element is changed (color applied)
+  // Update group fill when element is changed (color applied)
   eventBus.on('element.changed', (event: any) => {
     const element = event.element;
-    if (element.type in FILL_OPACITY) {
-      applyFill(element);
+    if (element.type === 'bpmn:Group') {
+      applyGroupFill(element);
     }
   });
 
-  // Also handle initial render for elements with existing colors
+  // Also handle initial render for groups with existing colors
   eventBus.on('shape.added', (event: any) => {
     const element = event.element;
-    if (element.type in FILL_OPACITY) {
+    if (element.type === 'bpmn:Group') {
       // Delay to ensure graphics are ready
       setTimeout(() => {
-        applyFill(element);
+        applyGroupFill(element);
       }, 0);
     }
   });
 }
 
-(FillColorHandler as any).$inject = ['eventBus', 'elementRegistry'];
+(GroupColorHandler as any).$inject = ['eventBus', 'elementRegistry'];
 
-const FillColorModule = {
-  __init__: ['fillColorHandler'],
-  fillColorHandler: ['type', FillColorHandler]
+const GroupColorModule = {
+  __init__: ['groupColorHandler'],
+  groupColorHandler: ['type', GroupColorHandler]
+};
+
+/**
+ * Bright colour per picker stroke colour, for text annotations. The picker
+ * strokes are dark border colours; an annotation has no fill, so its bracket
+ * and text use these brighter, more saturated colours instead
+ */
+const ANNOTATION_COLOR: Record<string, string> = {
+  '#0d4372': '#1976d2', // Blue
+  '#6b3c00': '#ef6c00', // Orange
+  '#205022': '#2e7d32', // Green
+  '#831311': '#d32f2f', // Red
+  '#5b176d': '#8e24aa' // Purple
+};
+
+/**
+ * Custom module to draw coloured text annotations in the bright colour
+ */
+function AnnotationColorHandler(eventBus: any, elementRegistry: any) {
+  function applyColor(element: any) {
+    const di = element.di;
+    const stroke =
+      di && (di.get('bioc:stroke') || di.get('color:border-color'));
+    const color = stroke && ANNOTATION_COLOR[stroke.toLowerCase()];
+    const gfx = color && elementRegistry.getGraphics(element);
+    if (gfx) {
+      gfx.querySelectorAll('.djs-visual path').forEach((path: any) => {
+        path.style.stroke = color;
+      });
+      gfx.querySelectorAll('.djs-visual text').forEach((text: any) => {
+        text.style.fill = color;
+      });
+    }
+  }
+
+  // Recolour after bpmn-js redraws the annotation (color applied)
+  eventBus.on('element.changed', (event: any) => {
+    if (event.element.type === 'bpmn:TextAnnotation') {
+      applyColor(event.element);
+    }
+  });
+
+  // Also handle initial render for annotations with existing colors
+  eventBus.on('shape.added', (event: any) => {
+    const element = event.element;
+    if (element.type === 'bpmn:TextAnnotation') {
+      // Delay to ensure graphics are ready
+      setTimeout(() => {
+        applyColor(element);
+      }, 0);
+    }
+  });
+}
+
+(AnnotationColorHandler as any).$inject = ['eventBus', 'elementRegistry'];
+
+const AnnotationColorModule = {
+  __init__: ['annotationColorHandler'],
+  annotationColorHandler: ['type', AnnotationColorHandler]
 };
 
 /**
@@ -228,7 +279,11 @@ export class BpmnWidget extends Widget {
         moddleExtensions: {
           camunda: camundaModdleDescriptor
         },
-        additionalModules: [BpmnColorPickerModule, FillColorModule]
+        additionalModules: [
+          BpmnColorPickerModule,
+          GroupColorModule,
+          AnnotationColorModule
+        ]
       });
       console.log('[BpmnWidget] BpmnModeler created');
 

@@ -574,13 +574,14 @@ test.describe('Colour', () => {
       .toEqual(['rgb(255, 204, 0)', '0.3']);
   });
 
-  test('ACC-COLOR-65 coloured annotation shows its fill at full strength', async ({
+  test('ACC-COLOR-65 coloured annotation draws bracket and text in the bright colour', async ({
     page,
     tmpPath
   }) => {
     const xml = bpmn(
       `    <bpmn:textAnnotation id="Note_1"><bpmn:text>Saved red</bpmn:text></bpmn:textAnnotation>
-    <bpmn:textAnnotation id="Note_2"><bpmn:text>Coloured now</bpmn:text></bpmn:textAnnotation>`,
+    <bpmn:textAnnotation id="Note_2"><bpmn:text>Coloured now</bpmn:text></bpmn:textAnnotation>
+    <bpmn:textAnnotation id="Note_3"><bpmn:text>Saved blue</bpmn:text></bpmn:textAnnotation>`,
       shape(
         'Note_1',
         100,
@@ -588,7 +589,16 @@ test.describe('Colour', () => {
         160,
         40,
         'bioc:fill="#ffcdd2" bioc:stroke="#831311"'
-      ) + shape('Note_2', 100, 200, 160, 40)
+      ) +
+        shape('Note_2', 100, 200, 160, 40) +
+        shape(
+          'Note_3',
+          100,
+          320,
+          160,
+          40,
+          'bioc:fill="#BBDEFB" bioc:stroke="#0D4372"'
+        )
     );
     await writeFile(page, `${tmpPath}/${NAME}`, xml);
     await openDiagram(page, `${tmpPath}/${NAME}`);
@@ -603,20 +613,30 @@ test.describe('Colour', () => {
           stroke: '#831311'
         });
     });
-    for (const id of ['Note_1', 'Note_2']) {
-      const rect = page.locator(
-        `.jp-BpmnWidget [data-element-id="${id}"] .djs-visual rect`
+    const expected: Record<string, string> = {
+      Note_1: 'rgb(211, 47, 47)',
+      Note_2: 'rgb(211, 47, 47)',
+      Note_3: 'rgb(25, 118, 210)'
+    };
+    for (const [id, color] of Object.entries(expected)) {
+      const visual = page.locator(
+        `.jp-BpmnWidget [data-element-id="${id}"] .djs-visual`
       );
       await expect
         .poll(() =>
-          rect
-            .first()
-            .evaluate((r: any) => [
-              getComputedStyle(r).fill,
-              getComputedStyle(r).fillOpacity
-            ])
+          visual.first().evaluate((v: any) => {
+            const style = (selector: string) =>
+              getComputedStyle(v.querySelector(selector));
+            return [
+              style('rect').fill,
+              style('path').stroke,
+              style('path').strokeOpacity,
+              style('text').fill,
+              style('text').fillOpacity
+            ];
+          })
         )
-        .toEqual(['rgb(255, 205, 210)', '1']);
+        .toEqual(['none', color, '1', color, '1']);
     }
   });
 
