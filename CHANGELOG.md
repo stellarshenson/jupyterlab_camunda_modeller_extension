@@ -2,6 +2,16 @@
 
 <!-- <START NEW CHANGELOG ENTRY> -->
 
+## [1.0.36] - 2026-10-30
+
+### Changed
+
+- Upgrade to extension template v4.6.5 and Makefile 1.46
+
+### Fixed
+
+- Take the scoped @stellarshenson/jupyterlab-camunda-modeller-extension npm name
+
 <!-- <END NEW CHANGELOG ENTRY> -->
 
 ## [1.0.34] - 2026-10-14
