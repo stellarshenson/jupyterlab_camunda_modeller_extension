@@ -1,7 +1,7 @@
 {
-  "name": "jupyterlab_camunda_modeller_extension-ui-tests",
+  "name": "@stellarshenson/jupyterlab-camunda-modeller-extension-ui-tests",
   "version": "1.0.0",
-  "description": "JupyterLab jupyterlab_camunda_modeller_extension Integration Tests",
+  "description": "JupyterLab @stellarshenson/jupyterlab-camunda-modeller-extension Integration Tests",
   "private": true,
   "scripts": {
     "start": "jupyter lab --config jupyter_server_test_config.py",

@@ -32,7 +32,7 @@ jobs:
         set -eux
         python -m pip install .[test]
         jupyter labextension list
-        jupyter labextension list 2>&1 | grep -ie "jupyterlab_camunda_modeller_extension.*OK"
+        jupyter labextension list 2>&1 | grep -ie "@stellarshenson/jupyterlab-camunda-modeller-extension.*OK"
         python -m jupyterlab.browser_check
 
     - name: Check that all endpoints are authenticated
@@ -73,7 +73,7 @@ jobs:
         set -eux
         pip install "jupyterlab>=4.6,<5" jupyterlab_camunda_modeller_extension*.whl
         jupyter labextension list
-        jupyter labextension list 2>&1 | grep -ie "jupyterlab_camunda_modeller_extension.*OK"
+        jupyter labextension list 2>&1 | grep -ie "@stellarshenson/jupyterlab-camunda-modeller-extension.*OK"
         python -m jupyterlab.browser_check --no-browser-test
 
   integration-tests:

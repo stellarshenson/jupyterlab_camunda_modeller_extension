@@ -41,7 +41,8 @@ const bpmnIcon = new LabIcon({
 /**
  * Plugin ID
  */
-const PLUGIN_ID = 'jupyterlab_camunda_modeller_extension:plugin';
+const PLUGIN_ID =
+  '@stellarshenson/jupyterlab-camunda-modeller-extension:plugin';
 
 /**
  * Command IDs
@@ -66,7 +67,7 @@ function getBpmnWidget(app: JupyterFrontEnd): BpmnWidget | null {
 }
 
 /**
- * Initialization data for the jupyterlab_camunda_modeller_extension extension.
+ * Initialization data for the @stellarshenson/jupyterlab-camunda-modeller-extension extension.
  */
 const plugin: JupyterFrontEndPlugin<void> = {
   id: PLUGIN_ID,
@@ -79,7 +80,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
     languages: IEditorLanguageRegistry | null
   ) => {
     console.log(
-      'JupyterLab extension jupyterlab_camunda_modeller_extension is activated!'
+      'JupyterLab extension @stellarshenson/jupyterlab-camunda-modeller-extension is activated!'
     );
 
     const { docRegistry, commands } = app;

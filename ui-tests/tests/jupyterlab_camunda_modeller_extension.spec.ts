@@ -23,7 +23,7 @@ test('ACC-PACK-35 emits the activation console message once', async ({
     logs.filter(
       s =>
         s ===
-        'JupyterLab extension jupyterlab_camunda_modeller_extension is activated!'
+        'JupyterLab extension @stellarshenson/jupyterlab-camunda-modeller-extension is activated!'
     )
   ).toHaveLength(1);
 });
