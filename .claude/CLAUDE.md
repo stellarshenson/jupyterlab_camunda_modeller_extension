@@ -32,7 +32,7 @@ JupyterLab extension for modelling BPMN diagrams and opening Camunda BPMN diagra
 
 **Package Names**:
 
-- npm: `jupyterlab_camunda_modeller_extension`
+- npm: `@stellarshenson/jupyterlab-camunda-modeller-extension`
 - PyPI: `jupyterlab-camunda-modeller-extension` (hyphenated)
 
 **Build System**:

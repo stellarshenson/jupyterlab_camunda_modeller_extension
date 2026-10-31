@@ -147,6 +147,97 @@ def test_malformed_xml_reports_parser_position_and_stops():
     assert "mismatched tag" in issues[0].message
 
 
+# expat passes these to Python's codecs, which raise instead of an ExpatError
+@pytest.mark.parametrize("encoding", ["foo", "shift_jis"])
+def test_encoding_the_parser_cannot_use_is_malformed_xml(encoding, files, tmp_path, capsys):
+    data = f'<?xml version="1.0" encoding="{encoding}"?><a/>'.encode()
+    issues = validate(data)
+    assert [(i.severity, i.code, i.line) for i in issues] == [("error", "malformed-xml", 1)]
+    clean, _ = files
+    bad = tmp_path / "bad.bpmn"
+    bad.write_bytes(data)
+    assert main([str(bad), str(clean)]) == 1
+    assert f"{clean}: 0 errors, 0 warnings" in capsys.readouterr().out
+
+
+ORDER = CONNECTED.replace('<bpmn:process id="Process_1"', '<bpmn:process id="Process_1" name="Zamówienie"')
+
+
+# ACC-VALID-93
+@pytest.mark.parametrize(
+    "declaration",
+    [
+        *(
+            f'<?xml version="1.0" encoding="{name}"?>'
+            for name in ("utf8", "UTF8", "utf_8", "U8", "UTF-8", "utf-8", "cp65001", "UTF")
+        ),
+        '<?xml version="1.0" encoding="utf8" ?>',  # a space before ?> changes nothing
+        "<?xml version='1.0' encoding='utf8'?>",  # the form ElementTree writes
+        '﻿<?xml version="1.0" encoding="utf8" standalone="yes"?>',
+    ],
+)
+def test_declared_utf8_spelling_parses_as_utf8(declaration, tmp_path):
+    data = ORDER.replace('<?xml version="1.0" encoding="UTF-8"?>', declaration).encode()
+    assert validate(data) == []
+    path = tmp_path / "order.bpmn"
+    path.write_bytes(data)
+    assert main([str(path)]) == 0
+
+
+# ACC-VALID-93
+def test_declared_utf8_on_bytes_that_are_not_utf8_is_malformed_xml_at_their_line():
+    data = ORDER.replace('encoding="UTF-8"', 'encoding="utf8"').encode("iso-8859-2")
+    assert [(i.code, i.line) for i in validate(data)] == [("malformed-xml", 3)]
+
+
+# ACC-VALID-93
+@pytest.mark.parametrize(
+    "comment, attribute",
+    [
+        ("", ""),
+        ('<!-- <?xml version="1.0" encoding="utf8"?> -->', ""),
+        ("", """exporter='version="1.0" encoding="utf8"' """),
+    ],
+)
+def test_declared_iso_8859_2_ignores_a_utf8_name_outside_the_declaration(comment, attribute):
+    text = ORDER.replace('encoding="UTF-8"?>', f'encoding="ISO-8859-2"?>{comment}').replace(
+        "<bpmn:definitions ", f"<bpmn:definitions {attribute}"
+    )
+    assert validate(text.encode("iso-8859-2")) == []
+
+
+# ACC-VALID-93
+def test_declared_name_in_a_comment_is_not_the_declaration():
+    declaration = '<?xml version="1.0"?><!-- <?xml version="1.0" encoding="foo"?> -->'
+    data = ORDER.replace('<?xml version="1.0" encoding="UTF-8"?>', declaration).encode()
+    assert validate(data) == []
+    # In a UTF-16 file the pattern cannot match the declaration, so the comment's bytes spell the only match
+    spelled = b'<?xml version="1.0" encoding="utf8"?> '.decode("utf-16-le")
+    declaration = f'<?xml version="1.0" encoding="foo"?><!--{spelled}-->'
+    data = ORDER.replace('<?xml version="1.0" encoding="UTF-8"?>', declaration).encode("utf-16")
+    assert [(i.code, i.message) for i in validate(data)] == [("malformed-xml", "unknown encoding: foo")]
+
+
+# ACC-VALID-93
+@pytest.mark.parametrize(
+    "declaration, message, line, column",
+    [
+        ('<?xml version="1.0" encoding="foo" standalone="maybe"?>', "XML declaration not well-formed", 1, 48),
+        ('<?xml version="1.0"\fencoding="foo"?>', "not well-formed (invalid token)", 1, 20),
+        ('<?xml version="1.0" encoding="UTF-16"?>', "encoding specified in XML declaration is incorrect", 1, 31),
+        ('<?xml version="1.0" encoding="utf-8-sig"?>', "not well-formed (invalid token)", 3, 41),
+    ],
+)
+def test_declared_other_name_keeps_the_expat_result(declaration, message, line, column):
+    data = ORDER.replace('<?xml version="1.0" encoding="UTF-8"?>', declaration).encode()
+    assert [(i.code, i.message, i.line, i.column) for i in validate(data)] == [("malformed-xml", message, line, column)]
+
+
+# ACC-VALID-93
+def test_declared_unknown_name_on_str_is_ignored():
+    assert validate(ORDER.replace('encoding="UTF-8"', 'encoding="foo"')) == []
+
+
 # ACC-VALID-50
 @pytest.mark.parametrize("text", ["", "  \n\t\n"])
 def test_empty_file_is_a_warning(text):
@@ -277,6 +368,32 @@ def test_exit_codes(files, tmp_path, capsys):
     assert exc.value.code == 2
 
 
+def test_stderr_messages_name_the_next_step(tmp_path, monkeypatch, capsys):
+    monkeypatch.setenv("PYTHON_COLORS", "0")
+    assert main([str(tmp_path / "missing.bpmn")]) == 2
+    assert capsys.readouterr().err.strip().endswith("Check the path and rerun")
+    for argv in (["--bogus", "x.bpmn"], []):
+        with pytest.raises(SystemExit) as exc:
+            main(argv)
+        assert exc.value.code == 2
+        assert capsys.readouterr().err.strip().endswith("Run bpmn-validate --help")
+
+
+# ACC-VALID-91
+def test_deep_nesting_reports_nothing_and_later_files_are_checked(files, tmp_path, capsys):
+    clean, _ = files
+    deep = tmp_path / "deep.bpmn"
+    deep.write_text(
+        CONNECTED.replace(
+            "</bpmn:definitions>", "<a>" * 5000 + "</a>" * 5000 + "</bpmn:definitions>"
+        )
+    )
+    assert main([str(deep), str(clean)]) == 0
+    out = capsys.readouterr().out
+    assert f"{deep}: 0 errors, 0 warnings" in out
+    assert f"{clean}: 0 errors, 0 warnings" in out
+
+
 # ACC-VALID-47
 def test_text_output_format(files, capsys):
     _, broken = files
@@ -310,6 +427,7 @@ def test_help_names_every_check_and_exit_code(monkeypatch, capsys):
         main(["--help"])
     assert exc.value.code == 0
     out = capsys.readouterr().out
+    assert "Prints one line per issue" in out
     for code in CHECKS:
         assert code in out
     for status in ("0 ", "1 ", "2 "):

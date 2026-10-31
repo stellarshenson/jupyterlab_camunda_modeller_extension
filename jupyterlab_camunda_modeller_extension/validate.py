@@ -1,5 +1,7 @@
 """Checks for BPMN 2.0 files: file and XML, references, modelling rules."""
 
+import codecs
+import re
 from dataclasses import dataclass, field
 from xml.parsers import expat
 
@@ -82,9 +84,12 @@ class _Element:
     text: str = ""
 
     def walk(self):
-        yield self
-        for child in self.children:
-            yield from child.walk()
+        # Iterative: the file sets the nesting depth, which can exceed the recursion limit
+        pending = [self]
+        while pending:
+            element = pending.pop()
+            yield element
+            pending.extend(reversed(element.children))
 
 
 class _Doctype(Exception):
@@ -95,8 +100,21 @@ def _issue(code, message, line, column=1, element=""):
     return Issue(CHECKS[code][0], code, message, line, column, element or "")
 
 
+_DECLARED_ENCODING = re.compile(
+    rb"""(?:\xef\xbb\xbf)?<\?xml\s+version\s*=\s*(["'])[\w.-]*\1"""
+    rb"""\s+encoding\s*=\s*(["'])([A-Za-z][\w.-]*)\2"""
+    rb"""(?:\s+standalone\s*=\s*(["'])(?:yes|no)\4)?\s*\?>"""
+)
+
+
 def _parse(text):
-    parser = expat.ParserCreate(namespace_separator=" ")
+    declared = _DECLARED_ENCODING.match(text) if isinstance(text, bytes) else None
+    # Expat gives a name it does not know, such as utf8, a single-byte table that rejects every non-ASCII byte
+    try:
+        utf8 = declared and codecs.lookup(declared[3].decode()).name == "utf-8"
+    except LookupError:
+        utf8 = False  # not UTF-8, so expat reports the name or an earlier error in the declaration
+    parser = expat.ParserCreate(encoding="UTF-8" if utf8 else None, namespace_separator=" ")
     stack = []
     root = []
 
@@ -147,6 +165,9 @@ def validate(text):
     except expat.ExpatError as exc:
         return [_issue("malformed-xml", expat.ErrorString(exc.code), exc.lineno,
                        exc.offset + 1)]
+    except (LookupError, ValueError) as exc:
+        # Python's codecs raise these for an encoding the XML declaration names
+        return [_issue("malformed-xml", str(exc), 1)]
     if root.ns != BPMN or root.name != "definitions":
         return [_issue("not-bpmn",
                        f"root element is {{{root.ns}}}{root.name}, expected definitions in {BPMN}",

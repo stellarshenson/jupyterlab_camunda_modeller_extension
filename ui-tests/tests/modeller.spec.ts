@@ -683,6 +683,22 @@ test.describe('Export', () => {
   });
 });
 
+test.describe('Command descriptions', () => {
+  test('ACC-EXPORT-85 ACC-ALIGN-86 export and realign commands describe empty args', async ({
+    page
+  }) => {
+    const described = await page.evaluate(async () => {
+      const { commands } = (window as any).jupyterapp;
+      return [
+        await commands.describedBy('bpmn:export-svg'),
+        await commands.describedBy('bpmn:realign-connectors')
+      ];
+    });
+    const empty = { args: { type: 'object', properties: {} } };
+    expect(described).toEqual([empty, empty]);
+  });
+});
+
 test.describe('Realign connectors', () => {
   const THIRTY = 'abcdefghijabcdefghijabcdefghij';
   const ALIGN_XML = bpmn(

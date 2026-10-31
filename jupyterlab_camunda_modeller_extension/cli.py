@@ -30,18 +30,24 @@ examples:
 """
 
 
+class _Parser(argparse.ArgumentParser):
+    def error(self, message):
+        super().error(f"{message}. Run bpmn-validate --help")
+
+
 def _parser():
     width = max(len(code) for code in CHECKS)
     checks = "\n".join(
         f"  {code:<{width}}  {severity:<7}  {meaning}"
         for code, (severity, meaning) in CHECKS.items()
     )
-    parser = argparse.ArgumentParser(
+    parser = _Parser(
         prog="bpmn-validate",
         description=(
             "Check BPMN 2.0 files for malformed XML, broken references, elements the "
-            "modeller cannot show and common modelling mistakes. Reads the files only; "
-            "never changes them."
+            "modeller cannot show and common modelling mistakes. Prints one line per "
+            "issue and one summary line per file, or one JSON document with --json. "
+            "Reads the files only; never changes them."
         ),
         epilog=EPILOG.format(checks=checks),
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -65,7 +71,10 @@ def main(argv=None):
         try:
             data = Path(path).read_bytes()
         except OSError as exc:
-            print(f"bpmn-validate: cannot read {path}: {exc.strerror}", file=sys.stderr)
+            print(
+                f"bpmn-validate: cannot read {path}: {exc.strerror}. Check the path and rerun",
+                file=sys.stderr,
+            )
             status = 2
             continue
         issues = validate(data)

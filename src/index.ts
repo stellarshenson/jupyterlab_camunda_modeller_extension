@@ -4,8 +4,10 @@ import {
 } from '@jupyterlab/application';
 import { IEditorLanguageRegistry } from '@jupyterlab/codemirror';
 import { DocumentWidget } from '@jupyterlab/docregistry';
+import { ITranslator, nullTranslator } from '@jupyterlab/translation';
 import { LabIcon } from '@jupyterlab/ui-components';
 
+// eslint-disable-next-line jupyter/prefer-lazy-imports -- activation needs BpmnFactory at once: docRegistry.addWidgetFactory takes one synchronously during activate; bpmn-js loads with it because the factory and the widget share one module
 import { BpmnFactory, BpmnWidget } from './widget';
 
 /**
@@ -74,16 +76,20 @@ const plugin: JupyterFrontEndPlugin<void> = {
   description:
     'JupyterLab extension to model BPMN diagrams and open Camunda BPMN files',
   autoStart: true,
-  optional: [IEditorLanguageRegistry],
+  optional: [IEditorLanguageRegistry, ITranslator],
   activate: (
     app: JupyterFrontEnd,
-    languages: IEditorLanguageRegistry | null
+    languages: IEditorLanguageRegistry | null,
+    translator: ITranslator | null
   ) => {
     console.log(
       'JupyterLab extension @stellarshenson/jupyterlab-camunda-modeller-extension is activated!'
     );
 
     const { docRegistry, commands } = app;
+    const trans = (translator ?? nullTranslator).load(
+      'jupyterlab_camunda_modeller_extension'
+    );
 
     // Register file type with icon
     docRegistry.addFileType({
@@ -122,15 +128,17 @@ const plugin: JupyterFrontEndPlugin<void> = {
       fileTypes: [FILE_TYPE_NAME],
       defaultFor: [FILE_TYPE_NAME],
       readOnly: false,
-      contents: app.serviceManager.contents
+      contents: app.serviceManager.contents,
+      trans
     });
 
     docRegistry.addWidgetFactory(factory);
 
     // Register Export as SVG command
     commands.addCommand(CommandIds.exportSvg, {
-      label: 'Export Diagram as SVG',
-      caption: 'Export BPMN diagram as SVG file',
+      label: trans.__('Export Diagram as SVG'),
+      caption: trans.__('Export BPMN diagram as SVG file'),
+      describedBy: { args: { type: 'object', properties: {} } },
       isEnabled: () => getBpmnWidget(app) !== null,
       execute: async () => {
         const widget = getBpmnWidget(app);
@@ -164,9 +172,11 @@ const plugin: JupyterFrontEndPlugin<void> = {
 
     // Register Realign Connectors command
     commands.addCommand(CommandIds.realignConnectors, {
-      label: 'Realign Connectors',
-      caption:
-        'Widen text annotations and re-route association connectors for proper alignment',
+      label: trans.__('Realign Connectors'),
+      caption: trans.__(
+        'Widen text annotations and re-route association connectors for proper alignment'
+      ),
+      describedBy: { args: { type: 'object', properties: {} } },
       isEnabled: () => getBpmnWidget(app) !== null,
       execute: () => {
         const widget = getBpmnWidget(app);

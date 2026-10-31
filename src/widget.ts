@@ -2,6 +2,7 @@ import { Dialog, showDialog, showErrorMessage } from '@jupyterlab/apputils';
 import { DocumentWidget } from '@jupyterlab/docregistry';
 import { ABCWidgetFactory, DocumentRegistry } from '@jupyterlab/docregistry';
 import { Contents, ServerConnection } from '@jupyterlab/services';
+import { TranslationBundle } from '@jupyterlab/translation';
 import {
   LabIcon,
   refreshIcon,
@@ -187,11 +188,17 @@ export class BpmnWidget extends Widget {
   private _savedXml = '';
   private _popupObserver: MutationObserver | null = null;
   private _serverSettings: ServerConnection.ISettings;
+  private _trans: TranslationBundle;
 
-  constructor(context: DocumentRegistry.Context, contents: Contents.IManager) {
+  constructor(
+    context: DocumentRegistry.Context,
+    contents: Contents.IManager,
+    trans: TranslationBundle
+  ) {
     super();
     this._context = context;
     this._serverSettings = contents.serverSettings;
+    this._trans = trans;
 
     this.addClass('jp-BpmnWidget');
     this.title.label = context.localPath;
@@ -562,8 +569,8 @@ export class BpmnWidget extends Widget {
       return;
     }
     await showDialog({
-      title: 'Validation',
-      body: validationBody(issues),
+      title: this._trans.__('Validation'),
+      body: validationBody(issues, this._trans),
       buttons: [Dialog.okButton()]
     });
   }
@@ -574,9 +581,14 @@ export class BpmnWidget extends Widget {
   async reload(): Promise<void> {
     if (this._context.model.dirty) {
       const result = await showDialog({
-        title: 'Reload Diagram from Disk',
-        body: 'Discard the unsaved changes and reload the diagram from disk?',
-        buttons: [Dialog.cancelButton(), Dialog.warnButton({ label: 'Reload' })]
+        title: this._trans.__('Reload Diagram from Disk'),
+        body: this._trans.__(
+          'Discard the unsaved changes and reload the diagram from disk?'
+        ),
+        buttons: [
+          Dialog.cancelButton(),
+          Dialog.warnButton({ label: this._trans.__('Reload') })
+        ]
       });
       if (!result.button.accept) {
         return;
@@ -721,11 +733,14 @@ interface IValidationIssue {
 /**
  * Dialog body: one row per issue (severity, element, message)
  */
-function validationBody(issues: IValidationIssue[]): Widget {
+function validationBody(
+  issues: IValidationIssue[],
+  trans: TranslationBundle
+): Widget {
   const body = new Widget();
   body.addClass('jp-BpmnValidation');
   if (!issues.length) {
-    body.node.textContent = 'No issues found';
+    body.node.textContent = trans.__('No issues found');
     return body;
   }
   const table = document.createElement('table');
@@ -766,10 +781,11 @@ export class BpmnFactory extends ABCWidgetFactory<
   constructor(
     options: DocumentRegistry.IWidgetFactoryOptions<
       DocumentWidget<BpmnWidget>
-    > & { contents: Contents.IManager }
+    > & { contents: Contents.IManager; trans: TranslationBundle }
   ) {
     super(options);
     this._contents = options.contents;
+    this._trans = options.trans;
   }
 
   /**
@@ -778,13 +794,13 @@ export class BpmnFactory extends ABCWidgetFactory<
   protected createNewWidget(
     context: DocumentRegistry.Context
   ): DocumentWidget<BpmnWidget> {
-    const content = new BpmnWidget(context, this._contents);
+    const content = new BpmnWidget(context, this._contents, this._trans);
     const widget = new DocumentWidget({ content, context });
     widget.toolbar.addItem(
       'bpmn-refresh',
       actionButton({
         icon: refreshIcon,
-        tooltip: 'Reload diagram from disk',
+        tooltip: this._trans.__('Reload diagram from disk'),
         onClick: () => void content.reload()
       })
     );
@@ -792,7 +808,7 @@ export class BpmnFactory extends ABCWidgetFactory<
       'bpmn-zoom-out',
       actionButton({
         label: '-',
-        tooltip: 'Zoom out',
+        tooltip: this._trans.__('Zoom out'),
         onClick: () => content.zoom(-1)
       })
     );
@@ -800,7 +816,7 @@ export class BpmnFactory extends ABCWidgetFactory<
       'bpmn-zoom-in',
       actionButton({
         label: '+',
-        tooltip: 'Zoom in',
+        tooltip: this._trans.__('Zoom in'),
         onClick: () => content.zoom(1)
       })
     );
@@ -808,15 +824,15 @@ export class BpmnFactory extends ABCWidgetFactory<
       'bpmn-fit',
       actionButton({
         icon: fitIcon,
-        tooltip: 'Fit diagram to view',
+        tooltip: this._trans.__('Fit diagram to view'),
         onClick: () => content.fit()
       })
     );
     widget.toolbar.addItem(
       'bpmn-validate',
       actionButton({
-        label: 'Validate',
-        tooltip: 'Check the diagram for problems',
+        label: this._trans.__('Validate'),
+        tooltip: this._trans.__('Check the diagram for problems'),
         onClick: () => void content.validate()
       })
     );
@@ -824,4 +840,5 @@ export class BpmnFactory extends ABCWidgetFactory<
   }
 
   private _contents: Contents.IManager;
+  private _trans: TranslationBundle;
 }

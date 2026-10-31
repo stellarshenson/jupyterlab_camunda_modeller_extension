@@ -2799,7 +2799,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@jupyterlab/translation@npm:^4.6.5":
+"@jupyterlab/translation@npm:^4.6.0, @jupyterlab/translation@npm:^4.6.5":
   version: 4.6.5
   resolution: "@jupyterlab/translation@npm:4.6.5"
   dependencies:
@@ -3562,6 +3562,7 @@ __metadata:
     "@jupyterlab/filebrowser": ^4.6.0
     "@jupyterlab/services": ^7.6.0
     "@jupyterlab/testutils": ^4.6.0
+    "@jupyterlab/translation": ^4.6.0
     "@jupyterlab/ui-components": ^4.6.0
     "@lumino/coreutils": ^2.2.0
     "@lumino/widgets": ^2.10.0
