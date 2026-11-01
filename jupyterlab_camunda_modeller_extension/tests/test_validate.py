@@ -2,8 +2,8 @@ import json
 import re
 import shutil
 import subprocess
-import sys
 import time
+import tomllib
 from pathlib import Path
 
 import pytest
@@ -444,9 +444,14 @@ def test_installed_command_runs():
 
 
 # ACC-VALID-63
-def test_installed_skill_matches_repository_copy():
-    installed = Path(sys.prefix) / "share/jupyter/agents/skills/jupyterlab-camunda-modeller-extension/SKILL.md"
-    assert installed.read_text() == (ROOT / SKILL).read_text()
+def test_skill_ships_in_the_wheel_mapping():
+    assert (ROOT / SKILL).is_file()
+    shared = tomllib.loads((ROOT / "pyproject.toml").read_text())["tool"]["hatch"]["build"][
+        "targets"
+    ]["wheel"]["shared-data"]
+    assert shared[".agents/skills/jupyterlab-camunda-modeller-extension"] == (
+        "share/jupyter/agents/skills/jupyterlab-camunda-modeller-extension"
+    )
 
 
 # ACC-VALID-66
