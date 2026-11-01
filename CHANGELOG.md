@@ -2,6 +2,24 @@
 
 <!-- <START NEW CHANGELOG ENTRY> -->
 
+## [1.0.37] - 2026-11-01
+
+### Added
+
+- `@jupyterlab/translation` dependency; the interface strings are translated, with English as the fallback when no translator is present
+- The Export SVG and Realign connectors commands describe their arguments, so the command palette shows a description
+
+### Changed
+
+- Agent skill: 348-word body, with a second improvement certificate line
+- `bpmn-validate` names the next step in its message when a file is missing or unreadable
+
+### Fixed
+
+- `bpmn-validate` reported `malformed-xml` on a valid UTF-8 file that spells its encoding `utf8`, `UTF8`, `utf_8` or `U8` and holds non-ASCII text
+- `bpmn-validate` raised on a declared encoding it cannot resolve, and on XML nested 5000 levels deep; it now reports an issue and walks iteratively
+- 19 lint warnings
+
 ## [1.0.36] - 2026-10-30
 
 ### Changed

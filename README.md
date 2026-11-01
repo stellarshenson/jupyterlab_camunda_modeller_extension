@@ -52,17 +52,7 @@ In JupyterLab, the Validate button in the diagram toolbar runs the same checks o
 
 ### Agent skill
 
-The skill `.agents/skills/jupyterlab-camunda-modeller-extension/SKILL.md` tells AI coding agents to run `bpmn-validate` after editing a `.bpmn` file. The wheel installs it under `share/jupyter/agents/skills/`. Link it once, with the Python that runs JupyterLab:
-
-```bash
-mkdir -p ~/.agents/skills && ln -s "$(python -c 'import sys; print(sys.prefix)')/share/jupyter/agents/skills/jupyterlab-camunda-modeller-extension" ~/.agents/skills/jupyterlab-camunda-modeller-extension
-```
-
-From a clone of this repository:
-
-```bash
-ln -s "$PWD/.agents/skills/jupyterlab-camunda-modeller-extension" ~/.claude/skills/jupyterlab-camunda-modeller-extension
-```
+The skill `.agents/skills/jupyterlab-camunda-modeller-extension/SKILL.md` tells AI coding agents to run `bpmn-validate` after editing a `.bpmn` file. The wheel is the whole delivery: `pip install` puts it at `<sys.prefix>/share/jupyter/agents/skills/jupyterlab-camunda-modeller-extension/SKILL.md`. No link is needed. Agent setups that index the wheel's skill folder reach it there, and this lab's `galaxalab` skill lists it by that path.
 
 ## Uninstall
 
