@@ -12,7 +12,8 @@ Observed wrong behaviour of the BPMN modeller extension, its build and its test 
 
 Build, install and dependency resolution
 
-- [x] `DEF-PACK-1-LIB0-TYPINGS` **TypeScript build fails on lib0 typings** - MAJOR; build stopped with `TS2315: Type 'Uint8Array' is not generic` in lib0 typings; cause: lib0 typings need TypeScript 5.7, the project pins ~5.5.4; fix: `skipLibCheck: true`, lib0 later pinned to 0.2.111; `tsconfig.json`, `package.json`
+- [x] `DEF-PACK-1-LIB0-TYPINGS` **TypeScript build fails on lib0 typings** - MAJOR; build stopped with `TS2315: Type 'Uint8Array' is not generic` in lib0 typings; fix: `skipLibCheck: true`, lib0 later pinned to 0.2.111; `tsconfig.json`, `package.json`
+  - root-cause: 2026-10-31T20:48:25Z @kj lib0 typings need TypeScript 5.7, the project then pinned ~5.5.4
   - evidence: make build exit 0, tsc clean with skipLibCheck and lib0 0.2.111, 2026-10-14
   - repro: remove `skipLibCheck` and the lib0 resolution, run `jlpm build:lib`
   - test-tags: FUNCTIONAL
@@ -20,12 +21,15 @@ Build, install and dependency resolution
   - log: 2026-10-14T10:12:00Z @kj backfilled from .claude/JOURNAL.md entry 3, fixed in v0.1.5
   - log: 2026-10-14T10:36:34Z @kj closed: fixed in v0.1.5, verified after the dependency upgrade
   - log: 2026-10-31T16:02:03Z @kj coded LIB0-TYPINGS
+  - log: 2026-10-31T20:44:42Z @kj edited text "build stopped with `TS2315: Type 'Uint8Array' is not generic` in lib0 typings; cause: lib0 typings need TypeScript 5.7, the project pins ~5.5.4; fix: `skipLibCheck: true`, lib0 later pinned to 0.2.111; `tsconfig.json`, `package.json`" -> "build stopped with `TS2315: Type 'Uint8Array' is not generic` in lib0 typings; fix: `skipLibCheck: true`, lib0 later pinned to 0.2.111; `tsconfig.json`, `package.json`"
+  - log: 2026-10-31T20:48:25Z @kj root-cause updated "2026-10-31T20:44:42Z @kj lib0 typings need TypeScript 5.7, the project pins ~5.5.4" -> "lib0 typings need TypeScript 5.7, the project then pinned ~5.5.4"
 
 ## Saving `SAVE`
 
 Writing the diagram to the file and reloading it
 
-- [x] `DEF-SAVE-2-OLD-DIAGRAM` **Ctrl+S saved the old diagram** - MAJOR; Ctrl+S wrote the diagram as opened, without the edits; cause: XML reached the model asynchronously on `saveState`, after the save had read the model; fix: model synced on every `commandStack.changed`; `src/widget.ts`
+- [x] `DEF-SAVE-2-OLD-DIAGRAM` **Ctrl+S saved the old diagram** - MAJOR; Ctrl+S wrote the diagram as opened, without the edits; fix: model synced on every `commandStack.changed`; `src/widget.ts`
+  - root-cause: 2026-10-31T20:44:42Z @kj XML reached the model asynchronously on `saveState`, after the save had read the model
   - evidence: spec ACC-SAVE-11-CTRL-S: new task in the saved file after Ctrl+S; Galata 25/25 green on JupyterLab 4.6.4, 2026-10-14
   - repro: add a task, press Ctrl+S at once, read the file
   - test-tags: E2E
@@ -34,7 +38,8 @@ Writing the diagram to the file and reloading it
   - log: 2026-10-14T10:36:34Z @kj closed: fixed in v0.1.5, verified
   - log: 2026-10-31T16:02:03Z @kj coded OLD-DIAGRAM
   - log: 2026-10-31T16:03:49Z @kj edited evidence "spec ACC-SAVE-11: new task in the saved file after Ctrl+S; Galata 25/25 green on JupyterLab 4.6.4, 2026-10-14" -> "spec ACC-SAVE-11-CTRL-S: new task in the saved file after Ctrl+S; Galata 25/25 green on JupyterLab 4.6.4, 2026-10-14"; reason: full id written; meaning unchanged
-- [x] `DEF-SAVE-14-EDITS-UNSAVED` **Edits not saved on JupyterLab 4.6** - CRITICAL; on JupyterLab 4.6 an edit leaves the tab clean, Ctrl+S writes nothing and closing the tab drops the edits without a prompt; cause: `model.fromString` no longer marks the model dirty; fix: `_syncToModel` sets `model.dirty`; `src/widget.ts`
+  - log: 2026-10-31T20:44:42Z @kj edited text "Ctrl+S wrote the diagram as opened, without the edits; cause: XML reached the model asynchronously on `saveState`, after the save had read the model; fix: model synced on every `commandStack.changed`; `src/widget.ts`" -> "Ctrl+S wrote the diagram as opened, without the edits; fix: model synced on every `commandStack.changed`; `src/widget.ts`"
+- [x] `DEF-SAVE-14-EDITS-UNSAVED` **Edits not saved on JupyterLab 4.6** - CRITICAL; on JupyterLab 4.6 an edit leaves the tab clean, Ctrl+S writes nothing and closing the tab drops the edits without a prompt; fix: `_syncToModel` sets `model.dirty`; `src/widget.ts`
   - evidence: specs ACC-SAVE-11-CTRL-S to ACC-SAVE-14-CLOSE-PROMPT and ACC-EDIT-9-CAMUNDA-ATTRS failed on the old build (saved file without the task, no dirty mark), green after the fix; Galata 25/25 green on JupyterLab 4.6.4, 2026-10-14
   - repro: JupyterLab 4.6.4: open a .bpmn file, add a task, press Ctrl+S, read the file - no task
   - test-tags: E2E
@@ -44,6 +49,7 @@ Writing the diagram to the file and reloading it
   - log: 2026-10-14T10:36:34Z @kj closed: fixed: _syncToModel sets model.dirty after fromString
   - log: 2026-10-31T16:02:03Z @kj coded EDITS-UNSAVED
   - log: 2026-10-31T16:03:49Z @kj edited evidence "specs ACC-SAVE-11 to 14 and ACC-EDIT-9 failed on the old build (saved file without the task, no dirty mark), green after the fix; Galata 25/25 green on JupyterLab 4.6.4, 2026-10-14" -> "specs ACC-SAVE-11-CTRL-S to ACC-SAVE-14-CLOSE-PROMPT and ACC-EDIT-9-CAMUNDA-ATTRS failed on the old build (saved file without the task, no dirty mark), green after the fix; Galata 25/25 green on JupyterLab 4.6.4, 2026-10-14"; reason: full id written; meaning unchanged
+  - log: 2026-10-31T20:48:25Z @kj edited text "on JupyterLab 4.6 an edit leaves the tab clean, Ctrl+S writes nothing and closing the tab drops the edits without a prompt; cause: `model.fromString` no longer marks the model dirty; fix: `_syncToModel` sets `model.dirty`; `src/widget.ts`" -> "on JupyterLab 4.6 an edit leaves the tab clean, Ctrl+S writes nothing and closing the tab drops the edits without a prompt; fix: `_syncToModel` sets `model.dirty`; `src/widget.ts`"
 - [x] `DEF-SAVE-15-RELOAD-IGNORED` **Reload from Disk ignored after an edit** - MAJOR; after the first edit "Reload from Disk" leaves the canvas unchanged, and the next edit writes the old diagram over the file; cause: `_onContentChanged` skips the reload while `_dirty`, which an edit sets and no save clears; fix: reload on every content change the widget did not raise; `src/widget.ts`
   - evidence: specs ACC-SAVE-15-RELOAD and ACC-SAVE-16-RELOAD-UNSAVED failed on the old build (EndEvent_Reloaded not shown), green after the fix; Galata 25/25 green on JupyterLab 4.6.4, 2026-10-14
   - repro: open a .bpmn file, add a task, Ctrl+S, change the file on disk, File > Reload from Disk
@@ -107,7 +113,8 @@ Writing the diagram to the file and reloading it
 
 Recognition and icon of `.bpmn` files
 
-- [x] `DEF-FILE-3-ICON` **No BPMN icon in the file browser** - MINOR; `.bpmn` files showed the generic file icon; cause: no `schemaDir` in package.json and an SVG too complex for LabIcon; fix: `schema/plugin.json`, `schemaDir`, simplified SVG; `src/index.ts`
+- [x] `DEF-FILE-3-ICON` **No BPMN icon in the file browser** - MINOR; `.bpmn` files showed the generic file icon; fix: `schema/plugin.json`, `schemaDir`, simplified SVG; `src/index.ts`
+  - root-cause: 2026-10-31T20:44:42Z @kj no `schemaDir` in package.json and an SVG too complex for LabIcon
   - evidence: spec ACC-FILE-2-BROWSER-ICON: listing row svg data-icon bpmn:icon; Galata 25/25 green on JupyterLab 4.6.4, 2026-10-14
   - repro: build without `schemaDir`, list a `.bpmn` file in the file browser
   - test-tags: E2E
@@ -116,12 +123,14 @@ Recognition and icon of `.bpmn` files
   - log: 2026-10-14T10:36:34Z @kj closed: fixed in v1.0.2, verified
   - log: 2026-10-31T16:02:03Z @kj coded ICON
   - log: 2026-10-31T16:03:50Z @kj edited evidence "spec ACC-FILE-2: listing row svg data-icon bpmn:icon; Galata 25/25 green on JupyterLab 4.6.4, 2026-10-14" -> "spec ACC-FILE-2-BROWSER-ICON: listing row svg data-icon bpmn:icon; Galata 25/25 green on JupyterLab 4.6.4, 2026-10-14"; reason: full id written; meaning unchanged
+  - log: 2026-10-31T20:44:42Z @kj edited text "`.bpmn` files showed the generic file icon; cause: no `schemaDir` in package.json and an SVG too complex for LabIcon; fix: `schema/plugin.json`, `schemaDir`, simplified SVG; `src/index.ts`" -> "`.bpmn` files showed the generic file icon; fix: `schema/plugin.json`, `schemaDir`, simplified SVG; `src/index.ts`"
 
 ## Styling `STYLE`
 
 Canvas and bpmn-js controls inside JupyterLab themes
 
-- [x] `DEF-STYLE-4-DARK-CANVAS` **Canvas unreadable in dark theme** - MINOR; diagram lines, palette and popups lost contrast under a dark theme; cause: canvas and controls used theme colour variables; fix: fixed white canvas and light controls; `style/base.css`
+- [x] `DEF-STYLE-4-DARK-CANVAS` **Canvas unreadable in dark theme** - MINOR; diagram lines, palette and popups lost contrast under a dark theme; fix: fixed white canvas and light controls; `style/base.css`
+  - root-cause: 2026-10-31T20:44:42Z @kj canvas and controls used theme colour variables
   - evidence: spec ACC-STYLE-28-WHITE-CANVAS: canvas rgb(255, 255, 255) under JupyterLab Dark; Galata 25/25 green on JupyterLab 4.6.4, 2026-10-14
   - repro: switch to JupyterLab Dark, open a diagram
   - test-tags: E2E
@@ -130,7 +139,9 @@ Canvas and bpmn-js controls inside JupyterLab themes
   - log: 2026-10-14T10:36:34Z @kj closed: fixed in v0.1.5, verified
   - log: 2026-10-31T16:02:03Z @kj coded DARK-CANVAS
   - log: 2026-10-31T16:03:50Z @kj edited evidence "spec ACC-STYLE-28: canvas rgb(255, 255, 255) under JupyterLab Dark; Galata 25/25 green on JupyterLab 4.6.4, 2026-10-14" -> "spec ACC-STYLE-28-WHITE-CANVAS: canvas rgb(255, 255, 255) under JupyterLab Dark; Galata 25/25 green on JupyterLab 4.6.4, 2026-10-14"; reason: full id written; meaning unchanged
-- [x] `DEF-STYLE-5-DIM-ENTRIES` **Context pad and popup entries dim** - MINOR; context pad and popup icons rendered dim grey; cause: bpmn-js default entry opacity; fix: `opacity: 1` and `color: #333` overrides; `style/base.css`
+  - log: 2026-10-31T20:44:42Z @kj edited text "diagram lines, palette and popups lost contrast under a dark theme; cause: canvas and controls used theme colour variables; fix: fixed white canvas and light controls; `style/base.css`" -> "diagram lines, palette and popups lost contrast under a dark theme; fix: fixed white canvas and light controls; `style/base.css`"
+- [x] `DEF-STYLE-5-DIM-ENTRIES` **Context pad and popup entries dim** - MINOR; context pad and popup icons rendered dim grey; fix: `opacity: 1` and `color: #333` overrides; `style/base.css`
+  - root-cause: 2026-10-31T20:44:42Z @kj bpmn-js default entry opacity
   - evidence: spec ACC-STYLE-29-FULL-OPACITY: every context pad entry opacity 1; Galata 25/25 green on JupyterLab 4.6.4, 2026-10-14
   - repro: select an element, look at the context pad icons
   - test-tags: E2E
@@ -139,6 +150,7 @@ Canvas and bpmn-js controls inside JupyterLab themes
   - log: 2026-10-14T10:36:34Z @kj closed: fixed in v1.0.4, verified
   - log: 2026-10-31T16:02:03Z @kj coded DIM-ENTRIES
   - log: 2026-10-31T16:03:50Z @kj edited evidence "spec ACC-STYLE-29: every context pad entry opacity 1; Galata 25/25 green on JupyterLab 4.6.4, 2026-10-14" -> "spec ACC-STYLE-29-FULL-OPACITY: every context pad entry opacity 1; Galata 25/25 green on JupyterLab 4.6.4, 2026-10-14"; reason: full id written; meaning unchanged
+  - log: 2026-10-31T20:44:42Z @kj edited text "context pad and popup icons rendered dim grey; cause: bpmn-js default entry opacity; fix: `opacity: 1` and `color: #333` overrides; `style/base.css`" -> "context pad and popup icons rendered dim grey; fix: `opacity: 1` and `color: #333` overrides; `style/base.css`"
 - [x] `DEF-STYLE-6-DIM-LABEL` **Label editing text dim grey** - MINOR; text typed into a label editor showed dim grey while saved labels are black; fix: `.djs-direct-editing-content` colour `#000`; `style/base.css`
   - root-cause: 2026-10-31T20:29:23Z @kj TextBox.js and diagram-js.css set no editor colour, so without the style/base.css rule typed text inherits var(--jp-ui-font-color1) from .jp-ThemedContainer: rgb(165,165,165) on the white canvas in Galaxa Dark Theme - Steel, measured on JupyterLab 4.6.5. Saved labels use SVG fill rgb(34,36,42) from bpmn-js getLabelColor. Report-date theme not recorded.
   - evidence: spec ACC-STYLE-30-LABEL-BLACK: label editor colour rgb(0, 0, 0); Galata 25/25 green on JupyterLab 4.6.4, 2026-10-14
@@ -163,7 +175,8 @@ Canvas and bpmn-js controls inside JupyterLab themes
 
 Element colouring through bpmn-js-color-picker
 
-- [x] `DEF-COLOR-7-POPUP-POSITION` **Colour popup far from the cursor** - MEDIUM; the colour picker popup opened far from the clicked element; cause: `position: fixed` inside a JupyterLab container with a CSS transform is placed relative to that container; fix: MutationObserver moves `.djs-popup-parent` to `document.body`; `src/widget.ts`
+- [x] `DEF-COLOR-7-POPUP-POSITION` **Colour popup far from the cursor** - MEDIUM; the colour picker popup opened far from the clicked element; fix: MutationObserver moves `.djs-popup-parent` to `document.body`; `src/widget.ts`
+  - root-cause: 2026-10-31T20:44:42Z @kj `position: fixed` inside a JupyterLab container with a CSS transform is placed relative to that container
   - evidence: spec ACC-COLOR-19-POPUP-POSITION: popup parent is body, popup within 100 px of the pad entry; Galata 25/25 green on JupyterLab 4.6.4, 2026-10-14
   - repro: select an element, click the colour entry of its context pad
   - test-tags: E2E
@@ -172,7 +185,9 @@ Element colouring through bpmn-js-color-picker
   - log: 2026-10-14T10:36:34Z @kj closed: fixed in v1.0.7, verified
   - log: 2026-10-31T16:02:03Z @kj coded POPUP-POSITION
   - log: 2026-10-31T16:03:50Z @kj edited evidence "spec ACC-COLOR-19: popup parent is body, popup within 100 px of the pad entry; Galata 25/25 green on JupyterLab 4.6.4, 2026-10-14" -> "spec ACC-COLOR-19-POPUP-POSITION: popup parent is body, popup within 100 px of the pad entry; Galata 25/25 green on JupyterLab 4.6.4, 2026-10-14"; reason: full id written; meaning unchanged
-- [x] `DEF-COLOR-8-GROUP-FILL` **Group colour not shown** - MINOR; colouring a group showed no fill; cause: bpmn-js draws groups without fill, and the first fix read `element.businessObject.di`, which newer bpmn-js no longer sets; fix: `GroupColorModule` reads `element.di`, fills the group rect at 0.3 opacity; `src/widget.ts`
+  - log: 2026-10-31T20:44:43Z @kj edited text "the colour picker popup opened far from the clicked element; cause: `position: fixed` inside a JupyterLab container with a CSS transform is placed relative to that container; fix: MutationObserver moves `.djs-popup-parent` to `document.body`; `src/widget.ts`" -> "the colour picker popup opened far from the clicked element; fix: MutationObserver moves `.djs-popup-parent` to `document.body`; `src/widget.ts`"
+- [x] `DEF-COLOR-8-GROUP-FILL` **Group colour not shown** - MINOR; colouring a group showed no fill; fix: `GroupColorModule` reads `element.di`, fills the group rect at 0.3 opacity; `src/widget.ts`
+  - root-cause: 2026-10-31T20:44:43Z @kj bpmn-js draws groups without fill, and the first fix read `element.businessObject.di`, which newer bpmn-js no longer sets
   - evidence: spec ACC-COLOR-20-GROUP-FILL: group rect fill rgb(255, 204, 0), fill-opacity 0.3; Galata 25/25 green on JupyterLab 4.6.4, 2026-10-14
   - repro: add a group, pick a colour for it
   - test-tags: E2E
@@ -181,6 +196,7 @@ Element colouring through bpmn-js-color-picker
   - log: 2026-10-14T10:36:34Z @kj closed: fixed in v1.0.30, verified
   - log: 2026-10-31T16:02:03Z @kj coded GROUP-FILL
   - log: 2026-10-31T16:03:50Z @kj edited evidence "spec ACC-COLOR-20: group rect fill rgb(255, 204, 0), fill-opacity 0.3; Galata 25/25 green on JupyterLab 4.6.4, 2026-10-14" -> "spec ACC-COLOR-20-GROUP-FILL: group rect fill rgb(255, 204, 0), fill-opacity 0.3; Galata 25/25 green on JupyterLab 4.6.4, 2026-10-14"; reason: full id written; meaning unchanged
+  - log: 2026-10-31T20:44:43Z @kj edited text "colouring a group showed no fill; cause: bpmn-js draws groups without fill, and the first fix read `element.businessObject.di`, which newer bpmn-js no longer sets; fix: `GroupColorModule` reads `element.di`, fills the group rect at 0.3 opacity; `src/widget.ts`" -> "colouring a group showed no fill; fix: `GroupColorModule` reads `element.di`, fills the group rect at 0.3 opacity; `src/widget.ts`"
 - [x] `DEF-COLOR-24-ANNOTATION-FILL` **Annotation colour fills its background** - MEDIUM; colouring a text annotation paints its background with the picker fill; expected: background stays empty, only bracket and text take the colour, at full strength
   - evidence: colour module fills only groups again (src/widget.ts GroupColorHandler); spec ACC-COLOR-65-ANNOTATION: saved and runtime-coloured annotations rect fill none, bracket stroke and text fill rgb(131, 19, 17), opacity 1; failed on the 1.0.33 build with rect rgb(255, 205, 210) (logs/galata-def-color-24-before.log); Colour block 5/5 green incl. ACC-COLOR-20-GROUP-FILL (logs/galata-def-color-24.log); make test green, 2026-10-14
   - related: ACC-COLOR-65-ANNOTATION
@@ -249,7 +265,8 @@ Jest, pytest and Galata test infrastructure
   - log: 2026-10-14T10:12:12Z @kj added
   - log: 2026-10-14T10:36:35Z @kj closed: fixed: c.LabApp.user_settings_dir = mkdtemp(prefix=galata-settings-)
   - log: 2026-10-31T16:02:03Z @kj coded DEVELOPER-SETTINGS
-- [x] `DEF-TEST-12-NO-EDIT` **Save test passes without an edit** - MEDIUM; `should save BPMN diagram with Ctrl+S` skips the edit when the palette entry is not visible and asserts only `StartEvent_1`, which the file held before the save, so it stays green with saving broken; fix: unconditional edit, assert the new task in the saved XML; `ui-tests/tests/jupyterlab_camunda_modeller_extension.spec.ts`
+- [x] `DEF-TEST-12-NO-EDIT` **Save test passes without an edit** - MEDIUM; `should save BPMN diagram with Ctrl+S` stays green with saving broken; fix: unconditional edit, assert the new task in the saved XML; `ui-tests/tests/jupyterlab_camunda_modeller_extension.spec.ts`
+  - root-cause: 2026-10-31T20:44:43Z @kj `should save BPMN diagram with Ctrl+S` skips the edit when the palette entry is not visible and asserts only `StartEvent_1`, which the file held before the save
   - evidence: spec ACC-SAVE-11-CTRL-S failed on the old build where saving was broken, green after the fix; Galata 25/25 green on JupyterLab 4.6.4, 2026-10-14
   - repro: make Ctrl+S a no-op in src/widget.ts, run the Galata suite, the test still passes
   - test-tags: E2E
@@ -257,6 +274,7 @@ Jest, pytest and Galata test infrastructure
   - log: 2026-10-14T10:36:35Z @kj closed: fixed: weak test removed; ACC-SAVE-11 spec edits unconditionally and asserts the task in the saved file
   - log: 2026-10-31T16:02:03Z @kj coded NO-EDIT
   - log: 2026-10-31T16:03:50Z @kj edited evidence "spec ACC-SAVE-11 failed on the old build where saving was broken, green after the fix; Galata 25/25 green on JupyterLab 4.6.4, 2026-10-14" -> "spec ACC-SAVE-11-CTRL-S failed on the old build where saving was broken, green after the fix; Galata 25/25 green on JupyterLab 4.6.4, 2026-10-14"; reason: full id written; meaning unchanged
+  - log: 2026-10-31T20:44:43Z @kj edited text "`should save BPMN diagram with Ctrl+S` skips the edit when the palette entry is not visible and asserts only `StartEvent_1`, which the file held before the save, so it stays green with saving broken; fix: unconditional edit, assert the new task in the saved XML; `ui-tests/tests/jupyterlab_camunda_modeller_extension.spec.ts`" -> "`should save BPMN diagram with Ctrl+S` stays green with saving broken; fix: unconditional edit, assert the new task in the saved XML; `ui-tests/tests/jupyterlab_camunda_modeller_extension.spec.ts`"
 
 ## Documentation `DOCS`
 
