@@ -208,6 +208,31 @@ test.describe('Editing', () => {
     expect(saved).toMatch(/<bpmn:userTask[^>]*camunda:assignee="demo"/);
   });
 
+  test('diagram opened in a hidden tab loads and shows on activation', async ({
+    page,
+    tmpPath
+  }) => {
+    await writeFile(page, `${tmpPath}/${NAME}`, START_ONLY);
+    await openDiagram(page, `${tmpPath}/${NAME}`);
+    const xml = bpmn(
+      '    <bpmn:task id="Task_Hidden"/>',
+      shape('Task_Hidden', 160, 120, 100, 80)
+    );
+    await writeFile(page, `${tmpPath}/hidden.bpmn`, xml);
+    await page.evaluate(async (path: string) => {
+      const widget = await (window as any).jupyterapp.commands.execute(
+        'docmanager:open',
+        { path, factory: 'BPMN Modeler', options: { activate: false } }
+      );
+      await widget.content.ready;
+    }, `${tmpPath}/hidden.bpmn`);
+    await tab(page, 'hidden.bpmn').click();
+    await expect(
+      page.locator('.jp-BpmnWidget [data-element-id="Task_Hidden"]')
+    ).toBeVisible();
+    await expect(page.locator('.jp-BpmnWidget-error:visible')).toHaveCount(0);
+  });
+
   test('ACC-EDIT-10 diagram is fitted to the viewport on open', async ({
     page,
     tmpPath

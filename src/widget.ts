@@ -180,6 +180,7 @@ export class BpmnWidget extends Widget {
   private _errorDiv: HTMLDivElement;
   private _modeler: BpmnModeler | null = null;
   private _loading = false;
+  private _fitPending = false;
   private _savedXml = '';
   private _popupObserver: MutationObserver | null = null;
   private _serverSettings: ServerConnection.ISettings;
@@ -357,13 +358,36 @@ export class BpmnWidget extends Widget {
 
       await this._modeler.importXML(content);
 
-      // Fit diagram to viewport
-      const canvas = this._modeler.get('canvas');
-      canvas.zoom('fit-viewport');
+      // Fit diagram to viewport; a hidden tab has no size and the fit
+      // throws there, so it waits for the first resize
+      if (this._container.clientWidth > 0 && this._container.clientHeight > 0) {
+        this._modeler.get('canvas').zoom('fit-viewport');
+      } else {
+        this._fitPending = true;
+      }
     } catch (error) {
       this._showError(error);
     } finally {
       this._loading = false;
+    }
+  }
+
+  /**
+   * Tell the canvas its new size, and run the fit a hidden open postponed
+   */
+  protected onResize(msg: Widget.ResizeMessage): void {
+    if (
+      !this._modeler ||
+      this._container.clientWidth === 0 ||
+      this._container.clientHeight === 0
+    ) {
+      return;
+    }
+    const canvas = this._modeler.get('canvas');
+    canvas.resized();
+    if (this._fitPending) {
+      this._fitPending = false;
+      canvas.zoom('fit-viewport');
     }
   }
 

@@ -177,6 +177,9 @@ def validate(text):
     elements = list(root.walk())
     ids = {}
     for element in elements:
+        # Ids of extension elements (camunda:formField) are local to their owner
+        if element.ns not in (BPMN, BPMNDI):
+            continue
         element_id = element.attrs.get("id")
         if element_id is None:
             continue

@@ -282,6 +282,20 @@ def test_duplicate_id_names_the_first_line():
     assert issues[0].line > first_line
 
 
+def test_repeated_id_on_camunda_extension_elements_is_not_a_duplicate():
+    field = (
+        '<bpmn:extensionElements><camunda:formData>'
+        '<camunda:formField id="comment" type="string"/>'
+        '</camunda:formData></bpmn:extensionElements>'
+    )
+    text = bpmn(
+        f'    <bpmn:userTask id="Task_1">{field}</bpmn:userTask>\n'
+        f'    <bpmn:userTask id="Task_2">{field}</bpmn:userTask>',
+        "\n".join([shape("Task_1"), shape("Task_2")]),
+    ).replace("xmlns:dc=", 'xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:dc=')
+    assert "duplicate-id" not in codes(text)
+
+
 # ACC-VALID-54
 def test_missing_target_ref_is_an_error():
     text = CONNECTED.replace('targetRef="End_1"', 'targetRef="End_9"')

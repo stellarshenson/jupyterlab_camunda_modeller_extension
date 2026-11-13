@@ -343,6 +343,13 @@ bpmn-validate CLI, its checks and the agent skill that points at it
   - log: 2026-10-31T18:45:20Z @kj added
   - log: 2026-10-31T18:50:59Z @kj closed
   - log: 2026-10-31T19:15:02Z @kj edited evidence "`_parse` creates the parser with encoding UTF-8 when the codec registry resolves the declared name to UTF-8. `test_declared_utf8_spelling_parses_as_utf8`: 6 of 8 failed with the fix undone (logs/pytest-mutant-utf8-decl.log); all `test_declared_` tests, 13 passed (logs/test-utf8-decl.log)" -> "`_parse` creates the parser with encoding UTF-8 when the codec registry resolves the declared name to UTF-8. `test_declared_utf8_spelling_parses_as_utf8`: 9 of 11 failed with the fix undone (logs/pytest-mutant-utf8-decl.log); all `test_declared_` tests, 21 passed (logs/test-utf8-repair-declared.log)"
+- [x] `DEF-VALID-32-EXT-ID` **Repeated id on Camunda extension elements reported as duplicate-id** - MAJOR; two userTasks each holding camunda:formField id="comment" make bpmn-validate and the Validate button report duplicate-id, an error, on a valid Camunda file
+  - evidence: test_repeated_id_on_camunda_extension_elements_is_not_a_duplicate passes; Jest 14, pytest 65, Galata 52 green at 1.0.41 (logs/fleet-build-test.log, 2026-11-13)
+  - repro: bpmn-validate on a file with two userTasks that each hold camunda:formField id="comment": duplicate-id is listed
+  - test-tags: UNIT
+  - root-cause: 2026-11-13T07:36:01Z @kj the id loop of validate() counted the id attribute of every element, also outside the BPMN and BPMNDI namespaces, where an id is local to its owner
+  - log: 2026-11-13T07:36:01Z @kj added
+  - log: 2026-11-13T07:39:54Z @kj closed
 
 ## Code quality `QUAL`
 
@@ -366,3 +373,18 @@ Dead code and leftover debugging in the shipped source
   - log: 2026-11-13T06:58:33Z @kj added
   - log: 2026-11-13T06:58:49Z @kj edited test-tags added "UNIT"
   - log: 2026-11-13T07:03:44Z @kj closed
+
+## Editing `EDIT`
+
+Defects in opening and editing a diagram in the modeller
+
+- log: 2026-11-13T07:36:01Z @kj category created
+- log: 2026-11-13T07:36:17Z @kj description added "Defects in opening and editing a diagram in the modeller"
+
+- [x] `DEF-EDIT-33-HIDDEN-OPEN` **Diagram opened in a hidden tab shows the load error** - MAJOR; a valid .bpmn opened while its tab is hidden (workspace restore, open without activation) shows 'Failed to load BPMN diagram'; the Fit button also fits to the panel size of the last viewbox change
+  - evidence: Galata case 'diagram opened in a hidden tab loads and shows on activation' passes; Jest 14, pytest 65, Galata 52 green at 1.0.41 (logs/fleet-build-test.log, 2026-11-13)
+  - repro: open one diagram, then docmanager:open a second .bpmn with options.activate false and click its tab: the error panel is shown
+  - test-tags: E2E
+  - root-cause: 2026-11-13T07:36:01Z @kj _loadDiagram ran canvas.zoom('fit-viewport') on a container of size 0, which throws, and the catch showed the load error; the widget never told the canvas about a resize, so its cached size went stale
+  - log: 2026-11-13T07:36:01Z @kj added
+  - log: 2026-11-13T07:39:54Z @kj closed

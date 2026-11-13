@@ -1,6 +1,6 @@
 {
     "name": "@stellarshenson/jupyterlab-camunda-modeller-extension",
-    "version": "1.0.39",
+    "version": "1.0.41",
     "description": "Jupyterlab extension to allow modelling bpmn diagrams (and opening camunda bpmn diagrams) directly in jupyterlab",
     "keywords": [
         "jupyter",

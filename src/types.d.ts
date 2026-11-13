@@ -20,6 +20,7 @@ declare module 'bpmn-js/lib/Modeler' {
 
   interface ICanvas {
     zoom(method: string | number): void;
+    resized(): void;
   }
 
   interface IEventBus {
