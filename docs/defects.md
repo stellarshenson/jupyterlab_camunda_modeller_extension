@@ -343,3 +343,26 @@ bpmn-validate CLI, its checks and the agent skill that points at it
   - log: 2026-10-31T18:45:20Z @kj added
   - log: 2026-10-31T18:50:59Z @kj closed
   - log: 2026-10-31T19:15:02Z @kj edited evidence "`_parse` creates the parser with encoding UTF-8 when the codec registry resolves the declared name to UTF-8. `test_declared_utf8_spelling_parses_as_utf8`: 6 of 8 failed with the fix undone (logs/pytest-mutant-utf8-decl.log); all `test_declared_` tests, 13 passed (logs/test-utf8-decl.log)" -> "`_parse` creates the parser with encoding UTF-8 when the codec registry resolves the declared name to UTF-8. `test_declared_utf8_spelling_parses_as_utf8`: 9 of 11 failed with the fix undone (logs/pytest-mutant-utf8-decl.log); all `test_declared_` tests, 21 passed (logs/test-utf8-repair-declared.log)"
+
+## Code quality `QUAL`
+
+Dead code and leftover debugging in the shipped source
+
+- log: 2026-11-13T06:58:33Z @kj category created
+
+- [x] `DEF-QUAL-30-DEBUG-LOGS` **Debug lines in the browser console** - MINOR; the widget writes a console.log line on every diagram edit and popup and 8 per open; index.ts writes 3 more; they hide real errors in the console
+  - evidence: grep console.log src: only the activation message and request.ts remain; Jest 14, pytest 64, Galata 51 green at 1.0.39 (logs/fleet-build-test.log, 2026-11-13)
+  - root-cause: 2026-11-13T07:03:44Z @kj debug lines written while the widget was built were never removed
+  - test-tags: MANUAL
+  - repro: open a .bpmn file with the browser console open, move one element: 'Synced to model' is printed
+  - log: 2026-11-13T06:58:33Z @kj added
+  - log: 2026-11-13T06:58:49Z @kj edited test-tags added "MANUAL"
+  - log: 2026-11-13T07:03:44Z @kj closed
+- [x] `DEF-QUAL-31-DEAD-CODE` **Unused icon module, widget set and SVG getter** - MINOR; src/icon.ts is imported nowhere and defines a second BPMN icon; activeWidgets in src/widget.ts is never read; BpmnWidget.getSvgElement has no caller
+  - evidence: src/icon.ts deleted, activeWidgets and getSvgElement removed, tsc and lint clean; Jest 14, pytest 64, Galata 51 green at 1.0.39 (logs/fleet-build-test.log, 2026-11-13)
+  - root-cause: 2026-11-13T07:03:44Z @kj index.ts got its own icon and the SVG export moved to saveSVG; the earlier icon module, widget set and getter stayed
+  - test-tags: UNIT
+  - repro: grep -rn "icon'\|activeWidgets\|getSvgElement" src: no import of ./icon, no read of the set, no call of the getter
+  - log: 2026-11-13T06:58:33Z @kj added
+  - log: 2026-11-13T06:58:49Z @kj edited test-tags added "UNIT"
+  - log: 2026-11-13T07:03:44Z @kj closed

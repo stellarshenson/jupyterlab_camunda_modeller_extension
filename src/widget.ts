@@ -171,11 +171,6 @@ const EMPTY_BPMN = `<?xml version="1.0" encoding="UTF-8"?>
 const REALIGN_COMMAND = 'jp-bpmn.realign-connectors';
 
 /**
- * Track all active widgets
- */
-const activeWidgets: Set<BpmnWidget> = new Set();
-
-/**
  * A widget for editing BPMN diagrams using bpmn-js
  */
 export class BpmnWidget extends Widget {
@@ -214,9 +209,6 @@ export class BpmnWidget extends Widget {
 
     this.node.appendChild(this._errorDiv);
     this.node.appendChild(this._container);
-
-    // Register widget for tracking
-    activeWidgets.add(this);
 
     // Initialize modeler and load diagram
     void this._initialize();
@@ -262,8 +254,6 @@ export class BpmnWidget extends Widget {
    */
   private async _initialize(): Promise<void> {
     try {
-      console.log('[BpmnWidget] Starting initialization...');
-
       // Show loading state
       this._container.innerHTML = `
         <div class="jp-BpmnWidget-loading">
@@ -272,15 +262,12 @@ export class BpmnWidget extends Widget {
       `;
 
       // Wait for context to be ready
-      console.log('[BpmnWidget] Waiting for context...');
       await this._context.ready;
-      console.log('[BpmnWidget] Context ready');
 
       // Clear loading state before creating modeler
       this._container.innerHTML = '';
 
       // Create modeler with color picker
-      console.log('[BpmnWidget] Creating BpmnModeler...');
       this._modeler = new BpmnModeler({
         container: this._container,
         moddleExtensions: {
@@ -292,7 +279,6 @@ export class BpmnWidget extends Widget {
           AnnotationColorModule
         ]
       });
-      console.log('[BpmnWidget] BpmnModeler created');
 
       // Set up observer to move popup-parent to body for correct positioning
       // This fixes popup positioning when JupyterLab has CSS transforms
@@ -337,12 +323,9 @@ export class BpmnWidget extends Widget {
       );
 
       // Load the diagram
-      console.log('[BpmnWidget] Loading diagram...');
       await this._loadDiagram();
-      console.log('[BpmnWidget] Diagram loaded');
 
       this._ready.resolve();
-      console.log('[BpmnWidget] Initialization complete');
     } catch (error) {
       console.error('[BpmnWidget] Initialization error:', error);
       this._showError(error);
@@ -404,7 +387,6 @@ export class BpmnWidget extends Widget {
         }
         // fromString no longer marks the model dirty (JupyterLab 4.6)
         this._context.model.dirty = true;
-        console.log('[BpmnWidget] Synced to model');
       }
     } catch (error) {
       console.error('[BpmnWidget] Failed to sync to model:', error);
@@ -491,7 +473,6 @@ export class BpmnWidget extends Widget {
           ) {
             // Move popup-parent to body for correct fixed positioning
             document.body.appendChild(node);
-            console.log('[BpmnWidget] Moved popup-parent to body');
           }
         });
       });
@@ -509,14 +490,6 @@ export class BpmnWidget extends Widget {
    */
   getDocumentPath(): string {
     return this._context.localPath;
-  }
-
-  /**
-   * Get the SVG element from the rendered diagram
-   */
-  getSvgElement(): SVGSVGElement | null {
-    const svg = this._container.querySelector('svg.djs-container');
-    return svg as SVGSVGElement | null;
   }
 
   /**
@@ -679,9 +652,6 @@ export class BpmnWidget extends Widget {
     if (this.isDisposed) {
       return;
     }
-
-    // Unregister widget
-    activeWidgets.delete(this);
 
     // Disconnect signals
     this._context.model.contentChanged.disconnect(this._onContentChanged, this);

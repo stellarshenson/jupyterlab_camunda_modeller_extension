@@ -101,7 +101,6 @@ const plugin: JupyterFrontEndPlugin<void> = {
       contentType: 'file',
       icon: bpmnIcon
     });
-    console.log('BPMN file type registered with icon');
 
     // The text editor picks its language by file extension
     languages?.addLanguage({
@@ -111,15 +110,6 @@ const plugin: JupyterFrontEndPlugin<void> = {
       extensions: ['bpmn'],
       load: async () => (await languages.getLanguage('xml'))!.support!
     });
-
-    // Debug: Check if file type was registered correctly
-    const registeredType = docRegistry.getFileType(FILE_TYPE_NAME);
-    console.log(
-      'Registered file type:',
-      registeredType?.name,
-      'icon:',
-      registeredType?.icon?.name
-    );
 
     // Create and register widget factory
     const factory = new BpmnFactory({
@@ -161,7 +151,6 @@ const plugin: JupyterFrontEndPlugin<void> = {
               a.click();
               document.body.removeChild(a);
               URL.revokeObjectURL(url);
-              console.log('Diagram exported as SVG');
             }
           } catch (error) {
             console.error('Failed to export diagram as SVG:', error);
