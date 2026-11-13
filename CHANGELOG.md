@@ -2,6 +2,17 @@
 
 <!-- <START NEW CHANGELOG ENTRY> -->
 
+## [1.0.42] - 2026-11-13
+
+### Changed
+
+- Ignore the PayPal donate link in the link check
+
+### Fixed
+
+- Validate ids of BPMN elements only and load a diagram opened in a hidden tab
+- Remove debug console logs and unused code
+
 ## [1.0.38] - 2026-11-01
 
 ### Changed
